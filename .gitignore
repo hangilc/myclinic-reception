@@ -1,0 +1,4 @@
+node_modules/
+printer-settings/
+npm-debug.log.*
+
