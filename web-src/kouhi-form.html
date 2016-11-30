@@ -1,0 +1,26 @@
+
+	<div class="error" style="display:none"></div>
+    <form onsubmit="return false;">
+        <table>
+            <tr>
+                <td><label for="futansha">負担者番号</label></td>
+                <td><input name="futansha" value="{{futansha}}"/></td>
+            </tr>
+            <tr>
+                <td><label for="jukyuusha">受給者番号</label></td>
+                <td><input name="jukyuusha" value="{{jukyuusha}}"/></td>
+            </tr>
+            <tr>
+                <td><label for="valid_from">有効期限（から）</label></td>
+                <td class="valid-from-element"></td>
+            </tr>
+            <tr>
+                <td><label for="valid_upto">有効期限（まで）</label></td>
+                <td class="valid-upto-element"></td>
+            </tr>
+        </table>
+    </form>
+    <div>
+        <button class="enter">入力</button>
+        <button class="cancel">キャンセル</button>
+    </div>

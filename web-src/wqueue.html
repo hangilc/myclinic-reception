@@ -1,0 +1,15 @@
+
+<table class="wqueue-table">
+	<tr>
+		<td class="{{state_as_alpha}}">{{state_as_kanji}}</td>
+		<td class="{{state_as_alpha}}" style="text-align:right">[{{patient_id_rep}}]</td>
+		<td class="{{state_as_alpha}}" style="max-width:260px">{{last_name}} {{first_name}} ({{last_name_yomi}} {{first_name_yomi}})</td>
+		<td>
+			<a href="javascript:void(0)" class="cmd-link show-visit-id" visit-id="{{visit_id}}"
+				patient-name="{{last_name}} {{first_name}}">受付番号</a> 
+			<!-- |
+			<a href="javascript:void(0)" class="cmd-link delete-wqueue" visit-id="{{visit_id}}"
+				patient-name="{{last_name}} {{first_name}}">削除</a> -->
+		</td>
+	</tr>
+</table>

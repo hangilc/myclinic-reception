@@ -1,0 +1,18 @@
+
+    <div style="border:1px solid #999; padding:6px; font-size:14px">
+        <div class="info-box" style="margin:0 0 6px 6px">
+            [{{patient_id}}]<br />
+            {{last_name}} {{first_name}}<br />
+            {{last_name_yomi}} {{first_name_yomi}}<br />
+            {{birth_day_as_kanji}}生<br />
+            {{age}}才<br />
+            {{sex_as_kanji}}<br />
+            {{address}}<br />
+            {{phone}}<br />
+        </div>
+        <div class="info-box-commands">
+            <button class="goto-patient-info" patient-id="{{patient_id}}">患者情報へ</button>
+            <button class="enter-patient" patient-id="{{patient_id}}" 
+                patient-name="{{last_name}} {{first_name}}">診察受付</button>
+        </div>
+    </div>

@@ -1,0 +1,31 @@
+
+    <table>
+        <tr>
+            <td>患者番号</td>
+            <td>{{patient_id}}</td>
+        </tr>
+        <tr>
+            <td>名前</td>
+            <td>{{last_name}} {{first_name}}</td>
+        </tr>
+        <tr>
+            <td>よみ</td>
+            <td>{{last_name_yomi}} {{first_name_yomi}}</td>
+        </tr>
+        <tr>
+            <td>生年月日</td>
+            <td>{{birth_day_as_kanji}}生 {{age}}才</td>
+        </tr>
+        <tr>
+            <td>性別</td>
+            <td>{{sex_as_kanji}}</td>
+        </tr>
+    </table>
+    <hr/>
+    <div>
+        この患者を診察に受け付けますか？
+    </div>
+    <div>
+        <button class="enter">はい</button>
+        <button class="cancel">キャンセル</button>
+    </div>

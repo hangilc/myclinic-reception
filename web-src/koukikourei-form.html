@@ -1,0 +1,34 @@
+
+	<div class="error" style="display:none"></div>
+    <form onsubmit="return false;">
+        <table>
+            <tr>
+                <td><label for="hokensha_bangou">保険者番号</label></td>
+                <td><input name="hokensha_bangou" value="{{hokensha_bangou}}"/></td>
+            </tr>
+            <tr>
+                <td><label for="hihokensha_bangou">被保険者番号</label></td>
+                <td><input name="hihokensha_bangou" value="{{hihokensha_bangou}}"/></td>
+            </tr>
+            <tr>
+                <td><label for="futan_wari">負担割合</label></td>
+                <td>
+                    <input type="radio" name="futan_wari" value="1"/>1割
+                    <input type="radio" name="futan_wari" value="2"/>2割
+                    <input type="radio" name="futan_wari" value="3"/>3割
+                </td>
+            </tr>
+            <tr>
+                <td><label for="valid_from">有効期限（から）</label></td>
+                <td class="valid-from-element"></td>
+            </tr>
+            <tr>
+                <td><label for="valid_upto">有効期限（まで）</label></td>
+                <td class="valid-upto-element"></td>
+            </tr>
+        </table>
+    </form>
+    <div>
+        <button class="enter">入力</button>
+        <button class="cancel">キャンセル</button>
+    </div>

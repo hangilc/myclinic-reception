@@ -1,0 +1,44 @@
+
+	<div class="error" style="display:none"></div>
+    <form onsubmit="return false" class="shahokokuho-form">
+        <table>
+            <tr>
+                <td><label for="hokensha_bangou">保険者番号</label></td>
+                <td><input name="hokensha_bangou" value="{{hokensha_bangou}}"/></td>
+            </tr>
+            <tr>
+                <td><label for="hihokensha_kigou">被保険者記号</label></td>
+                <td><input name="hihokensha_kigou" value="{{hihokensha_kigou}}"/></td>
+            </tr>
+            <tr>
+                <td><label for="hihokensha_bangou">被保険者番号</label></td>
+                <td><input name="hihokensha_bangou" value="{{hihokensha_bangou}}"/></td>
+            </tr>
+            <tr>
+                <td><label for="honnin">本人・家族</label></td>
+                <td><input type="radio" name="honnin" value="1"/>本人
+                    <input type="radio" name="honnin" value="0"/>家族</td>
+            </tr>
+            <tr>
+                <td><label for="valid_from">有効期限（から）</label></td>
+                <td class="valid-from-element"></td>
+            </tr>
+            <tr>
+                <td><label for="valid_upto">有効期限（まで）</label></td>
+                <td class="valid-upto-element"></td>
+            </tr>
+            <tr valign="top">
+                <td><label for="kourei">高齢</label></td>
+                <td>
+                    <span style="white-space: nowrap"><input type="radio" name="kourei" value="0"/>高齢でない</span><br class="kourei-br"/>
+                    <span style="white-space: nowrap"><input type="radio" name="kourei" value="1"/>１割</span>
+                    <span style="white-space: nowrap"><input type="radio" name="kourei" value="2"/>２割</span>
+                    <span style="white-space: nowrap"><input type="radio" name="kourei" value="3"/>３割</span>
+                </td>
+            </tr>
+        </table>
+	    <div>
+	        <button class="enter">入力</button>
+	        <button class="cancel">キャンセル</button>
+	    </div>
+    </form>
