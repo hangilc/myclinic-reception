@@ -1,4 +1,4 @@
-# myclinic-cashier
+# myclinic-reception
 
 Reception sub-service for myclinic.
 
