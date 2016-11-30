@@ -1,0 +1,32 @@
+a.cmd-link { text-decoration: none; white-space: nowrap }
+hr { background-color: #ccc; border: none; }
+table.info-table tr td:first-child { color:#666; }
+.alpha { ime-mode: inactive }
+.kanji { ime-mode: active }
+.wqueue-table .wait-cashier { color: red; }
+.wqueue-table .wait-drug { color: green; }
+.workarea-panel {
+	border: 2px solid #ccc;
+	margin: 3px;
+	padding: 4px;
+}
+.workarea-panel .title {
+	background-color: #ccc;
+	padding: 4px;
+	font-weight: bold;
+}
+.workarea-panel h2 {
+	font-size: 100%;
+	margin:6px 0;
+	padding: 4px;
+	font-weight: bold;
+}
+.error {
+	border: 1px solid red;
+	margin: 4px;
+	padding: 4px;
+	color: red;
+}
+.command-box {
+	margin-top: 6px;
+}

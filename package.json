@@ -4,7 +4,7 @@
   "description": "Reception service for myclinic",
   "main": "index.js",
   "scripts": {
-	"build": "webpack web-src/main.js static/bundle.js",
+    "build": "webpack web-src/main.js static/bundle.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/hangilc/myclinic-reception#readme",
   "devDependencies": {
+    "moment": "^2.17.0",
     "myclinic-web": "^1.0.4",
     "webpack": "^1.13.3"
   }
