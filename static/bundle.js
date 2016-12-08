@@ -45,21 +45,85 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var Wqueue = __webpack_require__(1);
-	var service = __webpack_require__(2);
+	var service = __webpack_require__(7);
+	var conti = __webpack_require__(11);
 
 	document.getElementById("update-wqueue-button").addEventListener("click", function(){
 		var dom = document.getElementById("wqueue-table");
-		Wqueue.render(dom);
+		var wqueue;
+		conti.exec([
+			function(done){
+				service.listFullWqueue(function(err, result){
+					if( err ){
+						done(err);
+						return;
+					}
+					wqueue = result;
+					done();
+				});
+			}
+		], function(err){
+			if( err ){
+				alert(err);
+				return;
+			}
+			Wqueue.render(dom, wqueue);
+		});
 	});
+
 
 
 /***/ },
 /* 1 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
-	
-	exports.render = function(dom){
-		dom.innerHTML = "WQUEUE";
+	var hogan = __webpack_require__(2);
+	var tmplSrc = __webpack_require__(5);
+	var tmpl = hogan.compile(tmplSrc);
+	var mConsts = __webpack_require__(6);
+
+	exports.render = function(dom, wqueue){
+		var list = wqueue.map(function(wq){
+			return {
+				state_as_alpha: wqueueStateToAlpha(wq.wait_state),
+				state_as_kanji: wqueueStateToKanji(wq.wait_state),
+				patient_id_rep: padNumber(wq.patient_id),
+				last_name: wq.last_name,
+				first_name: wq.first_name,	
+				last_name_yomi: wq.last_name_yomi,
+				first_name_yomi: wq.first_name_yomi,	
+				visit_id: wq.visit_id
+			};
+		});
+		dom.innerHTML = tmpl.render({ list: list });
+	};
+
+	function padNumber(num){
+		return ("0000" + num).substr(-4);
+	}
+
+	function wqueueStateToKanji(wqState){
+		switch(wqState){
+			case mConsts.WqueueStateWaitExam: return "診待";
+			case mConsts.WqueueStateInExam: return "診中";
+			case mConsts.WqueueStateWaitCashier: return "会待";
+			case mConsts.WqueueStateWaitDrug: return "薬待";
+			case mConsts.WqueueStateWaitReExam: return "再待";
+			case mConsts.WqueueStateWaitAppoint: return "予待";
+			default: return "不明";
+		}
+	};
+
+	function wqueueStateToAlpha(wqState){
+		switch(wqState){
+			case mConsts.WqueueStateWaitExam: return "wait-exam";
+			case mConsts.WqueueStateInExam: return "in-exam";
+			case mConsts.WqueueStateWaitCashier: return "wait-cashier";
+			case mConsts.WqueueStateWaitDrug: return "wait-drug";
+			case mConsts.WqueueStateWaitReExam: return "wait-re-exam";
+			case mConsts.WqueueStateWaitAppoint: return "wait-appointed-exam";
+			default: return "unknown";
+		}
 	};
 
 
@@ -67,10 +131,901 @@
 /* 2 */
 /***/ function(module, exports, __webpack_require__) {
 
+	/*
+	 *  Copyright 2011 Twitter, Inc.
+	 *  Licensed under the Apache License, Version 2.0 (the "License");
+	 *  you may not use this file except in compliance with the License.
+	 *  You may obtain a copy of the License at
+	 *
+	 *  http://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 *  Unless required by applicable law or agreed to in writing, software
+	 *  distributed under the License is distributed on an "AS IS" BASIS,
+	 *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 *  See the License for the specific language governing permissions and
+	 *  limitations under the License.
+	 */
+
+	// This file is for use with Node.js. See dist/ for browser files.
+
+	var Hogan = __webpack_require__(3);
+	Hogan.Template = __webpack_require__(4).Template;
+	Hogan.template = Hogan.Template;
+	module.exports = Hogan;
+
+
+/***/ },
+/* 3 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/*
+	 *  Copyright 2011 Twitter, Inc.
+	 *  Licensed under the Apache License, Version 2.0 (the "License");
+	 *  you may not use this file except in compliance with the License.
+	 *  You may obtain a copy of the License at
+	 *
+	 *  http://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 *  Unless required by applicable law or agreed to in writing, software
+	 *  distributed under the License is distributed on an "AS IS" BASIS,
+	 *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 *  See the License for the specific language governing permissions and
+	 *  limitations under the License.
+	 */
+
+	(function (Hogan) {
+	  // Setup regex  assignments
+	  // remove whitespace according to Mustache spec
+	  var rIsWhitespace = /\S/,
+	      rQuot = /\"/g,
+	      rNewline =  /\n/g,
+	      rCr = /\r/g,
+	      rSlash = /\\/g,
+	      rLineSep = /\u2028/,
+	      rParagraphSep = /\u2029/;
+
+	  Hogan.tags = {
+	    '#': 1, '^': 2, '<': 3, '$': 4,
+	    '/': 5, '!': 6, '>': 7, '=': 8, '_v': 9,
+	    '{': 10, '&': 11, '_t': 12
+	  };
+
+	  Hogan.scan = function scan(text, delimiters) {
+	    var len = text.length,
+	        IN_TEXT = 0,
+	        IN_TAG_TYPE = 1,
+	        IN_TAG = 2,
+	        state = IN_TEXT,
+	        tagType = null,
+	        tag = null,
+	        buf = '',
+	        tokens = [],
+	        seenTag = false,
+	        i = 0,
+	        lineStart = 0,
+	        otag = '{{',
+	        ctag = '}}';
+
+	    function addBuf() {
+	      if (buf.length > 0) {
+	        tokens.push({tag: '_t', text: new String(buf)});
+	        buf = '';
+	      }
+	    }
+
+	    function lineIsWhitespace() {
+	      var isAllWhitespace = true;
+	      for (var j = lineStart; j < tokens.length; j++) {
+	        isAllWhitespace =
+	          (Hogan.tags[tokens[j].tag] < Hogan.tags['_v']) ||
+	          (tokens[j].tag == '_t' && tokens[j].text.match(rIsWhitespace) === null);
+	        if (!isAllWhitespace) {
+	          return false;
+	        }
+	      }
+
+	      return isAllWhitespace;
+	    }
+
+	    function filterLine(haveSeenTag, noNewLine) {
+	      addBuf();
+
+	      if (haveSeenTag && lineIsWhitespace()) {
+	        for (var j = lineStart, next; j < tokens.length; j++) {
+	          if (tokens[j].text) {
+	            if ((next = tokens[j+1]) && next.tag == '>') {
+	              // set indent to token value
+	              next.indent = tokens[j].text.toString()
+	            }
+	            tokens.splice(j, 1);
+	          }
+	        }
+	      } else if (!noNewLine) {
+	        tokens.push({tag:'\n'});
+	      }
+
+	      seenTag = false;
+	      lineStart = tokens.length;
+	    }
+
+	    function changeDelimiters(text, index) {
+	      var close = '=' + ctag,
+	          closeIndex = text.indexOf(close, index),
+	          delimiters = trim(
+	            text.substring(text.indexOf('=', index) + 1, closeIndex)
+	          ).split(' ');
+
+	      otag = delimiters[0];
+	      ctag = delimiters[delimiters.length - 1];
+
+	      return closeIndex + close.length - 1;
+	    }
+
+	    if (delimiters) {
+	      delimiters = delimiters.split(' ');
+	      otag = delimiters[0];
+	      ctag = delimiters[1];
+	    }
+
+	    for (i = 0; i < len; i++) {
+	      if (state == IN_TEXT) {
+	        if (tagChange(otag, text, i)) {
+	          --i;
+	          addBuf();
+	          state = IN_TAG_TYPE;
+	        } else {
+	          if (text.charAt(i) == '\n') {
+	            filterLine(seenTag);
+	          } else {
+	            buf += text.charAt(i);
+	          }
+	        }
+	      } else if (state == IN_TAG_TYPE) {
+	        i += otag.length - 1;
+	        tag = Hogan.tags[text.charAt(i + 1)];
+	        tagType = tag ? text.charAt(i + 1) : '_v';
+	        if (tagType == '=') {
+	          i = changeDelimiters(text, i);
+	          state = IN_TEXT;
+	        } else {
+	          if (tag) {
+	            i++;
+	          }
+	          state = IN_TAG;
+	        }
+	        seenTag = i;
+	      } else {
+	        if (tagChange(ctag, text, i)) {
+	          tokens.push({tag: tagType, n: trim(buf), otag: otag, ctag: ctag,
+	                       i: (tagType == '/') ? seenTag - otag.length : i + ctag.length});
+	          buf = '';
+	          i += ctag.length - 1;
+	          state = IN_TEXT;
+	          if (tagType == '{') {
+	            if (ctag == '}}') {
+	              i++;
+	            } else {
+	              cleanTripleStache(tokens[tokens.length - 1]);
+	            }
+	          }
+	        } else {
+	          buf += text.charAt(i);
+	        }
+	      }
+	    }
+
+	    filterLine(seenTag, true);
+
+	    return tokens;
+	  }
+
+	  function cleanTripleStache(token) {
+	    if (token.n.substr(token.n.length - 1) === '}') {
+	      token.n = token.n.substring(0, token.n.length - 1);
+	    }
+	  }
+
+	  function trim(s) {
+	    if (s.trim) {
+	      return s.trim();
+	    }
+
+	    return s.replace(/^\s*|\s*$/g, '');
+	  }
+
+	  function tagChange(tag, text, index) {
+	    if (text.charAt(index) != tag.charAt(0)) {
+	      return false;
+	    }
+
+	    for (var i = 1, l = tag.length; i < l; i++) {
+	      if (text.charAt(index + i) != tag.charAt(i)) {
+	        return false;
+	      }
+	    }
+
+	    return true;
+	  }
+
+	  // the tags allowed inside super templates
+	  var allowedInSuper = {'_t': true, '\n': true, '$': true, '/': true};
+
+	  function buildTree(tokens, kind, stack, customTags) {
+	    var instructions = [],
+	        opener = null,
+	        tail = null,
+	        token = null;
+
+	    tail = stack[stack.length - 1];
+
+	    while (tokens.length > 0) {
+	      token = tokens.shift();
+
+	      if (tail && tail.tag == '<' && !(token.tag in allowedInSuper)) {
+	        throw new Error('Illegal content in < super tag.');
+	      }
+
+	      if (Hogan.tags[token.tag] <= Hogan.tags['$'] || isOpener(token, customTags)) {
+	        stack.push(token);
+	        token.nodes = buildTree(tokens, token.tag, stack, customTags);
+	      } else if (token.tag == '/') {
+	        if (stack.length === 0) {
+	          throw new Error('Closing tag without opener: /' + token.n);
+	        }
+	        opener = stack.pop();
+	        if (token.n != opener.n && !isCloser(token.n, opener.n, customTags)) {
+	          throw new Error('Nesting error: ' + opener.n + ' vs. ' + token.n);
+	        }
+	        opener.end = token.i;
+	        return instructions;
+	      } else if (token.tag == '\n') {
+	        token.last = (tokens.length == 0) || (tokens[0].tag == '\n');
+	      }
+
+	      instructions.push(token);
+	    }
+
+	    if (stack.length > 0) {
+	      throw new Error('missing closing tag: ' + stack.pop().n);
+	    }
+
+	    return instructions;
+	  }
+
+	  function isOpener(token, tags) {
+	    for (var i = 0, l = tags.length; i < l; i++) {
+	      if (tags[i].o == token.n) {
+	        token.tag = '#';
+	        return true;
+	      }
+	    }
+	  }
+
+	  function isCloser(close, open, tags) {
+	    for (var i = 0, l = tags.length; i < l; i++) {
+	      if (tags[i].c == close && tags[i].o == open) {
+	        return true;
+	      }
+	    }
+	  }
+
+	  function stringifySubstitutions(obj) {
+	    var items = [];
+	    for (var key in obj) {
+	      items.push('"' + esc(key) + '": function(c,p,t,i) {' + obj[key] + '}');
+	    }
+	    return "{ " + items.join(",") + " }";
+	  }
+
+	  function stringifyPartials(codeObj) {
+	    var partials = [];
+	    for (var key in codeObj.partials) {
+	      partials.push('"' + esc(key) + '":{name:"' + esc(codeObj.partials[key].name) + '", ' + stringifyPartials(codeObj.partials[key]) + "}");
+	    }
+	    return "partials: {" + partials.join(",") + "}, subs: " + stringifySubstitutions(codeObj.subs);
+	  }
+
+	  Hogan.stringify = function(codeObj, text, options) {
+	    return "{code: function (c,p,i) { " + Hogan.wrapMain(codeObj.code) + " }," + stringifyPartials(codeObj) +  "}";
+	  }
+
+	  var serialNo = 0;
+	  Hogan.generate = function(tree, text, options) {
+	    serialNo = 0;
+	    var context = { code: '', subs: {}, partials: {} };
+	    Hogan.walk(tree, context);
+
+	    if (options.asString) {
+	      return this.stringify(context, text, options);
+	    }
+
+	    return this.makeTemplate(context, text, options);
+	  }
+
+	  Hogan.wrapMain = function(code) {
+	    return 'var t=this;t.b(i=i||"");' + code + 'return t.fl();';
+	  }
+
+	  Hogan.template = Hogan.Template;
+
+	  Hogan.makeTemplate = function(codeObj, text, options) {
+	    var template = this.makePartials(codeObj);
+	    template.code = new Function('c', 'p', 'i', this.wrapMain(codeObj.code));
+	    return new this.template(template, text, this, options);
+	  }
+
+	  Hogan.makePartials = function(codeObj) {
+	    var key, template = {subs: {}, partials: codeObj.partials, name: codeObj.name};
+	    for (key in template.partials) {
+	      template.partials[key] = this.makePartials(template.partials[key]);
+	    }
+	    for (key in codeObj.subs) {
+	      template.subs[key] = new Function('c', 'p', 't', 'i', codeObj.subs[key]);
+	    }
+	    return template;
+	  }
+
+	  function esc(s) {
+	    return s.replace(rSlash, '\\\\')
+	            .replace(rQuot, '\\\"')
+	            .replace(rNewline, '\\n')
+	            .replace(rCr, '\\r')
+	            .replace(rLineSep, '\\u2028')
+	            .replace(rParagraphSep, '\\u2029');
+	  }
+
+	  function chooseMethod(s) {
+	    return (~s.indexOf('.')) ? 'd' : 'f';
+	  }
+
+	  function createPartial(node, context) {
+	    var prefix = "<" + (context.prefix || "");
+	    var sym = prefix + node.n + serialNo++;
+	    context.partials[sym] = {name: node.n, partials: {}};
+	    context.code += 't.b(t.rp("' +  esc(sym) + '",c,p,"' + (node.indent || '') + '"));';
+	    return sym;
+	  }
+
+	  Hogan.codegen = {
+	    '#': function(node, context) {
+	      context.code += 'if(t.s(t.' + chooseMethod(node.n) + '("' + esc(node.n) + '",c,p,1),' +
+	                      'c,p,0,' + node.i + ',' + node.end + ',"' + node.otag + " " + node.ctag + '")){' +
+	                      't.rs(c,p,' + 'function(c,p,t){';
+	      Hogan.walk(node.nodes, context);
+	      context.code += '});c.pop();}';
+	    },
+
+	    '^': function(node, context) {
+	      context.code += 'if(!t.s(t.' + chooseMethod(node.n) + '("' + esc(node.n) + '",c,p,1),c,p,1,0,0,"")){';
+	      Hogan.walk(node.nodes, context);
+	      context.code += '};';
+	    },
+
+	    '>': createPartial,
+	    '<': function(node, context) {
+	      var ctx = {partials: {}, code: '', subs: {}, inPartial: true};
+	      Hogan.walk(node.nodes, ctx);
+	      var template = context.partials[createPartial(node, context)];
+	      template.subs = ctx.subs;
+	      template.partials = ctx.partials;
+	    },
+
+	    '$': function(node, context) {
+	      var ctx = {subs: {}, code: '', partials: context.partials, prefix: node.n};
+	      Hogan.walk(node.nodes, ctx);
+	      context.subs[node.n] = ctx.code;
+	      if (!context.inPartial) {
+	        context.code += 't.sub("' + esc(node.n) + '",c,p,i);';
+	      }
+	    },
+
+	    '\n': function(node, context) {
+	      context.code += write('"\\n"' + (node.last ? '' : ' + i'));
+	    },
+
+	    '_v': function(node, context) {
+	      context.code += 't.b(t.v(t.' + chooseMethod(node.n) + '("' + esc(node.n) + '",c,p,0)));';
+	    },
+
+	    '_t': function(node, context) {
+	      context.code += write('"' + esc(node.text) + '"');
+	    },
+
+	    '{': tripleStache,
+
+	    '&': tripleStache
+	  }
+
+	  function tripleStache(node, context) {
+	    context.code += 't.b(t.t(t.' + chooseMethod(node.n) + '("' + esc(node.n) + '",c,p,0)));';
+	  }
+
+	  function write(s) {
+	    return 't.b(' + s + ');';
+	  }
+
+	  Hogan.walk = function(nodelist, context) {
+	    var func;
+	    for (var i = 0, l = nodelist.length; i < l; i++) {
+	      func = Hogan.codegen[nodelist[i].tag];
+	      func && func(nodelist[i], context);
+	    }
+	    return context;
+	  }
+
+	  Hogan.parse = function(tokens, text, options) {
+	    options = options || {};
+	    return buildTree(tokens, '', [], options.sectionTags || []);
+	  }
+
+	  Hogan.cache = {};
+
+	  Hogan.cacheKey = function(text, options) {
+	    return [text, !!options.asString, !!options.disableLambda, options.delimiters, !!options.modelGet].join('||');
+	  }
+
+	  Hogan.compile = function(text, options) {
+	    options = options || {};
+	    var key = Hogan.cacheKey(text, options);
+	    var template = this.cache[key];
+
+	    if (template) {
+	      var partials = template.partials;
+	      for (var name in partials) {
+	        delete partials[name].instance;
+	      }
+	      return template;
+	    }
+
+	    template = this.generate(this.parse(this.scan(text, options.delimiters), text, options), text, options);
+	    return this.cache[key] = template;
+	  }
+	})( true ? exports : Hogan);
+
+
+/***/ },
+/* 4 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/*
+	 *  Copyright 2011 Twitter, Inc.
+	 *  Licensed under the Apache License, Version 2.0 (the "License");
+	 *  you may not use this file except in compliance with the License.
+	 *  You may obtain a copy of the License at
+	 *
+	 *  http://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 *  Unless required by applicable law or agreed to in writing, software
+	 *  distributed under the License is distributed on an "AS IS" BASIS,
+	 *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 *  See the License for the specific language governing permissions and
+	 *  limitations under the License.
+	 */
+
+	var Hogan = {};
+
+	(function (Hogan) {
+	  Hogan.Template = function (codeObj, text, compiler, options) {
+	    codeObj = codeObj || {};
+	    this.r = codeObj.code || this.r;
+	    this.c = compiler;
+	    this.options = options || {};
+	    this.text = text || '';
+	    this.partials = codeObj.partials || {};
+	    this.subs = codeObj.subs || {};
+	    this.buf = '';
+	  }
+
+	  Hogan.Template.prototype = {
+	    // render: replaced by generated code.
+	    r: function (context, partials, indent) { return ''; },
+
+	    // variable escaping
+	    v: hoganEscape,
+
+	    // triple stache
+	    t: coerceToString,
+
+	    render: function render(context, partials, indent) {
+	      return this.ri([context], partials || {}, indent);
+	    },
+
+	    // render internal -- a hook for overrides that catches partials too
+	    ri: function (context, partials, indent) {
+	      return this.r(context, partials, indent);
+	    },
+
+	    // ensurePartial
+	    ep: function(symbol, partials) {
+	      var partial = this.partials[symbol];
+
+	      // check to see that if we've instantiated this partial before
+	      var template = partials[partial.name];
+	      if (partial.instance && partial.base == template) {
+	        return partial.instance;
+	      }
+
+	      if (typeof template == 'string') {
+	        if (!this.c) {
+	          throw new Error("No compiler available.");
+	        }
+	        template = this.c.compile(template, this.options);
+	      }
+
+	      if (!template) {
+	        return null;
+	      }
+
+	      // We use this to check whether the partials dictionary has changed
+	      this.partials[symbol].base = template;
+
+	      if (partial.subs) {
+	        // Make sure we consider parent template now
+	        if (!partials.stackText) partials.stackText = {};
+	        for (key in partial.subs) {
+	          if (!partials.stackText[key]) {
+	            partials.stackText[key] = (this.activeSub !== undefined && partials.stackText[this.activeSub]) ? partials.stackText[this.activeSub] : this.text;
+	          }
+	        }
+	        template = createSpecializedPartial(template, partial.subs, partial.partials,
+	          this.stackSubs, this.stackPartials, partials.stackText);
+	      }
+	      this.partials[symbol].instance = template;
+
+	      return template;
+	    },
+
+	    // tries to find a partial in the current scope and render it
+	    rp: function(symbol, context, partials, indent) {
+	      var partial = this.ep(symbol, partials);
+	      if (!partial) {
+	        return '';
+	      }
+
+	      return partial.ri(context, partials, indent);
+	    },
+
+	    // render a section
+	    rs: function(context, partials, section) {
+	      var tail = context[context.length - 1];
+
+	      if (!isArray(tail)) {
+	        section(context, partials, this);
+	        return;
+	      }
+
+	      for (var i = 0; i < tail.length; i++) {
+	        context.push(tail[i]);
+	        section(context, partials, this);
+	        context.pop();
+	      }
+	    },
+
+	    // maybe start a section
+	    s: function(val, ctx, partials, inverted, start, end, tags) {
+	      var pass;
+
+	      if (isArray(val) && val.length === 0) {
+	        return false;
+	      }
+
+	      if (typeof val == 'function') {
+	        val = this.ms(val, ctx, partials, inverted, start, end, tags);
+	      }
+
+	      pass = !!val;
+
+	      if (!inverted && pass && ctx) {
+	        ctx.push((typeof val == 'object') ? val : ctx[ctx.length - 1]);
+	      }
+
+	      return pass;
+	    },
+
+	    // find values with dotted names
+	    d: function(key, ctx, partials, returnFound) {
+	      var found,
+	          names = key.split('.'),
+	          val = this.f(names[0], ctx, partials, returnFound),
+	          doModelGet = this.options.modelGet,
+	          cx = null;
+
+	      if (key === '.' && isArray(ctx[ctx.length - 2])) {
+	        val = ctx[ctx.length - 1];
+	      } else {
+	        for (var i = 1; i < names.length; i++) {
+	          found = findInScope(names[i], val, doModelGet);
+	          if (found !== undefined) {
+	            cx = val;
+	            val = found;
+	          } else {
+	            val = '';
+	          }
+	        }
+	      }
+
+	      if (returnFound && !val) {
+	        return false;
+	      }
+
+	      if (!returnFound && typeof val == 'function') {
+	        ctx.push(cx);
+	        val = this.mv(val, ctx, partials);
+	        ctx.pop();
+	      }
+
+	      return val;
+	    },
+
+	    // find values with normal names
+	    f: function(key, ctx, partials, returnFound) {
+	      var val = false,
+	          v = null,
+	          found = false,
+	          doModelGet = this.options.modelGet;
+
+	      for (var i = ctx.length - 1; i >= 0; i--) {
+	        v = ctx[i];
+	        val = findInScope(key, v, doModelGet);
+	        if (val !== undefined) {
+	          found = true;
+	          break;
+	        }
+	      }
+
+	      if (!found) {
+	        return (returnFound) ? false : "";
+	      }
+
+	      if (!returnFound && typeof val == 'function') {
+	        val = this.mv(val, ctx, partials);
+	      }
+
+	      return val;
+	    },
+
+	    // higher order templates
+	    ls: function(func, cx, partials, text, tags) {
+	      var oldTags = this.options.delimiters;
+
+	      this.options.delimiters = tags;
+	      this.b(this.ct(coerceToString(func.call(cx, text)), cx, partials));
+	      this.options.delimiters = oldTags;
+
+	      return false;
+	    },
+
+	    // compile text
+	    ct: function(text, cx, partials) {
+	      if (this.options.disableLambda) {
+	        throw new Error('Lambda features disabled.');
+	      }
+	      return this.c.compile(text, this.options).render(cx, partials);
+	    },
+
+	    // template result buffering
+	    b: function(s) { this.buf += s; },
+
+	    fl: function() { var r = this.buf; this.buf = ''; return r; },
+
+	    // method replace section
+	    ms: function(func, ctx, partials, inverted, start, end, tags) {
+	      var textSource,
+	          cx = ctx[ctx.length - 1],
+	          result = func.call(cx);
+
+	      if (typeof result == 'function') {
+	        if (inverted) {
+	          return true;
+	        } else {
+	          textSource = (this.activeSub && this.subsText && this.subsText[this.activeSub]) ? this.subsText[this.activeSub] : this.text;
+	          return this.ls(result, cx, partials, textSource.substring(start, end), tags);
+	        }
+	      }
+
+	      return result;
+	    },
+
+	    // method replace variable
+	    mv: function(func, ctx, partials) {
+	      var cx = ctx[ctx.length - 1];
+	      var result = func.call(cx);
+
+	      if (typeof result == 'function') {
+	        return this.ct(coerceToString(result.call(cx)), cx, partials);
+	      }
+
+	      return result;
+	    },
+
+	    sub: function(name, context, partials, indent) {
+	      var f = this.subs[name];
+	      if (f) {
+	        this.activeSub = name;
+	        f(context, partials, this, indent);
+	        this.activeSub = false;
+	      }
+	    }
+
+	  };
+
+	  //Find a key in an object
+	  function findInScope(key, scope, doModelGet) {
+	    var val;
+
+	    if (scope && typeof scope == 'object') {
+
+	      if (scope[key] !== undefined) {
+	        val = scope[key];
+
+	      // try lookup with get for backbone or similar model data
+	      } else if (doModelGet && scope.get && typeof scope.get == 'function') {
+	        val = scope.get(key);
+	      }
+	    }
+
+	    return val;
+	  }
+
+	  function createSpecializedPartial(instance, subs, partials, stackSubs, stackPartials, stackText) {
+	    function PartialTemplate() {};
+	    PartialTemplate.prototype = instance;
+	    function Substitutions() {};
+	    Substitutions.prototype = instance.subs;
+	    var key;
+	    var partial = new PartialTemplate();
+	    partial.subs = new Substitutions();
+	    partial.subsText = {};  //hehe. substext.
+	    partial.buf = '';
+
+	    stackSubs = stackSubs || {};
+	    partial.stackSubs = stackSubs;
+	    partial.subsText = stackText;
+	    for (key in subs) {
+	      if (!stackSubs[key]) stackSubs[key] = subs[key];
+	    }
+	    for (key in stackSubs) {
+	      partial.subs[key] = stackSubs[key];
+	    }
+
+	    stackPartials = stackPartials || {};
+	    partial.stackPartials = stackPartials;
+	    for (key in partials) {
+	      if (!stackPartials[key]) stackPartials[key] = partials[key];
+	    }
+	    for (key in stackPartials) {
+	      partial.partials[key] = stackPartials[key];
+	    }
+
+	    return partial;
+	  }
+
+	  var rAmp = /&/g,
+	      rLt = /</g,
+	      rGt = />/g,
+	      rApos = /\'/g,
+	      rQuot = /\"/g,
+	      hChars = /[&<>\"\']/;
+
+	  function coerceToString(val) {
+	    return String((val === null || val === undefined) ? '' : val);
+	  }
+
+	  function hoganEscape(str) {
+	    str = coerceToString(str);
+	    return hChars.test(str) ?
+	      str
+	        .replace(rAmp, '&amp;')
+	        .replace(rLt, '&lt;')
+	        .replace(rGt, '&gt;')
+	        .replace(rApos, '&#39;')
+	        .replace(rQuot, '&quot;') :
+	      str;
+	  }
+
+	  var isArray = Array.isArray || function(a) {
+	    return Object.prototype.toString.call(a) === '[object Array]';
+	  };
+
+	})( true ? exports : Hogan);
+
+
+/***/ },
+/* 5 */
+/***/ function(module, exports) {
+
+	module.exports = "\r\n<table class=\"wqueue-table\">\r\n\t{{#list}}\r\n\t<tr>\r\n\t\t<td class=\"{{state_as_alpha}}\">{{state_as_kanji}}</td>\r\n\t\t<td class=\"{{state_as_alpha}}\" style=\"text-align:right\">[{{patient_id_rep}}]</td>\r\n\t\t<td class=\"{{state_as_alpha}}\" style=\"max-width:260px\">{{last_name}} {{first_name}} ({{last_name_yomi}} {{first_name_yomi}})</td>\r\n\t\t<td>\r\n\t\t\t受付番号：{{visit_id}}\r\n\t\t</td>\r\n\t</tr>\r\n\t{{/list}}\r\n</table>\r\n"
+
+/***/ },
+/* 6 */
+/***/ function(module, exports) {
+
 	"use strict";
 
-	__webpack_require__(3);
-	var conti = __webpack_require__(5);
+	exports.WqueueStateWaitExam = 0;
+	exports.WqueueStateInExam = 1;
+	exports.WqueueStateWaitCashier = 2;
+	exports.WqueueStateWaitDrug = 3;
+	exports.WqueueStateWaitReExam = 4;
+	exports.WqueueStateWaitAppoint = 5;
+
+	exports.PharmaQueueStateWaitPack = 0;
+	exports.PharmaQueueStateInPack   = 1;
+	exports.PharmaQueueStatePackDone = 2;
+
+	exports.DiseaseEndReasonNotEnded = "N";
+	exports.DiseaseEndReasonCured = "C";
+	exports.DiseaseEndReasonStopped = "S";
+	exports.DiseaseEndReasonDead = "D";
+
+	exports.DrugCategoryNaifuku = 0;
+	exports.DrugCategoryTonpuku = 1;
+	exports.DrugCategoryGaiyou  = 2;
+
+	exports.ConductKindHikaChuusha = 0;
+	exports.ConductKindJoumyakuChuusha = 1;
+	exports.ConductKindOtherChuusha = 2;
+	exports.ConductKindGazou = 3;
+
+	exports.ZaikeiNaifuku = 1;
+	exports.ZaikeiOther = 3;
+	exports.ZaikeiChuusha = 4;
+	exports.ZaikeiGaiyou = 6;
+	exports.ZaikeiShikaYakuzai = 8;
+	exports.ZaikeiShikaTokutei = 9;
+
+	exports.SmallestPostfixShuushokugoCode = 8000;
+	exports.LargestPostfixShuushookugoCode = 8999;
+
+	exports.MeisaiSections = [
+	        "初・再診料", "医学管理等", "在宅医療", "検査", "画像診断",
+	        "投薬", "注射", "処置", "その他"       
+	    ];
+
+	exports.SHUUKEI_SHOSHIN = "110";
+	exports.SHUUKEI_SAISHIN_SAISHIN = "120";
+	exports.SHUUKEI_SAISHIN_GAIRAIKANRI = "122";
+	exports.SHUUKEI_SAISHIN_JIKANGAI = "123";
+	exports.SHUUKEI_SAISHIN_KYUUJITSU = "124";
+	exports.SHUUKEI_SAISHIN_SHINYA = "125";
+	exports.SHUUKEI_SHIDO = "130";
+	exports.SHUUKEI_ZAITAKU = "140";
+	exports.SHUUKEI_TOYAKU_NAIFUKUTONPUKUCHOZAI = "210";
+	exports.SHUUKEI_TOYAKU_GAIYOCHOZAI = "230";
+	exports.SHUUKEI_TOYAKU_SHOHO = "250";
+	exports.SHUUKEI_TOYAKU_MADOKU = "260";
+	exports.SHUUKEI_TOYAKU_CHOKI = "270";
+	exports.SHUUKEI_CHUSHA_SEIBUTSUETC = "300";
+	exports.SHUUKEI_CHUSHA_HIKA = "311";
+	exports.SHUUKEI_CHUSHA_JOMYAKU = "321";
+	exports.SHUUKEI_CHUSHA_OTHERS = "331";
+	exports.SHUUKEI_SHOCHI = "400";
+	exports.SHUUKEI_SHUJUTSU_SHUJUTSU = "500";
+	exports.SHUUKEI_SHUJUTSU_YUKETSU = "502";
+	exports.SHUUKEI_MASUI = "540";
+	exports.SHUUKEI_KENSA = "600";
+	exports.SHUUKEI_GAZOSHINDAN = "700";
+	exports.SHUUKEI_OTHERS = "800";
+
+	exports.HOUKATSU_NONE = '00';
+	exports.HOUKATSU_KETSUEKIKageKU = "01";
+	exports.HOUKATSU_ENDOCRINE = "02";
+	exports.HOUKATSU_HEPATITIS = "03";
+	exports.HOUKATSU_TUMOR = "04";
+	exports.HOUKATSU_TUMORMISC = "05";
+	exports.HOUKATSU_COAGULO = "06";
+	exports.HOUKATSU_AUTOANTIBODY = "07";
+	exports.HOUKATSU_TOLERANCE = "08";
+
+
+/***/ },
+/* 7 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	__webpack_require__(8);
+	var conti = __webpack_require__(10);
 
 	var timeout = 15000;
 
@@ -108,7 +1063,7 @@
 		url += "?" + searchParams.toString();
 		conti.fetchJson(url, opt, function(err, result){
 			if( timer ){
-				clearTimeout()
+				clearTimeout(timer)
 			}
 			if( !done ){
 				done = true;
@@ -116,28 +1071,6 @@
 			}
 		});
 	}
-
-	// function request(service, data, method, cb){
-	// 	data = data || {};
-	// 	method = method || "GET";
-	// 	var config = {
-	// 		url: "./service?_q=" + service,
-	//         type: method,
-	// 		data: data,
-	// 		dataType: "json",
-	// 		success: function(list){
-	// 			cb(undefined, list);
-	// 		},
-	// 		error: function(xhr, err, errThrown){
-	// 			cb("ERROR: " + (xhr.responseText || err || errThrown));
-	// 		},
-	// 		timeout: 10000
-	// 	};
-	// 	if( method === "POST" && typeof data === "string" ){
-	// 		config.contentType = "application/json";
-	// 	}
-	// 	$.ajax(config);
-	// }
 
 	exports.recentVisits = function(cb){
 		request("recent_visits", "", "GET", cb);
@@ -611,9 +1544,124 @@
 
 	exports.insertPharmaQueue = exports.enterPharmaQueue;
 
+	// reception //////////////////////////////////////////////////////
+
+	exports.listFullWqueue = function(cb){
+		request("list_full_wqueue", {}, "GET", cb);
+	};
+
+	exports.updatePatient = function(patient){
+		request("update_patient", patient, "POST", done);
+	};
+
+	exports.listAvailableHoken = function(patientId, ati, cb){
+		request("list_available_hoken", { patient_id: patientId, at: at }, "GET", cb);
+	};
+
+	exports.getShahokokuho = function(shahokokuhoId, cb){
+		request("get_shahokokuho", { shahokokuho_id: shahokokuhoId }, "GET", cb);
+	};
+
+	exports.updateShahokokuho = function(shahokokuho, done){
+		request("update_shahokokuho", shahokokuho, "POST", done);
+	};
+
+	exports.deleteShahokokuho = function(shahokokuhoId, done){
+		request("delete_shahokokuho", { shahokokuho_id: shahokokuhoId }, "POST", done);
+	};
+
+	exports.enterShahokokuho = function(shahokokuho, done){
+		request("enter_shahokokuho", shahokokuho, "POST", function(err, result){
+			if( err ){
+				done(err);
+				return;
+			}
+			shahokokuho.shahokokuho_id = result;
+			done();
+		});
+	};
+
+	exports.getKoukikourei = function(koukikoureiId, cb){
+		request("get_koukikourei", { koukikourei_id: koukikoureiId }, "GET", cb);
+	};
+
+	exports.updateKoukikourei = function(koukikourei, done){
+		request("update_koukikourei", koukikourei, "POST", done);
+	};
+
+	exports.deleteKoukikourei = function(koukikoureiId, done){
+		request("delete_koukikourei", { koukikourei_id: koukikoureiId }, "POST", done);
+	};
+
+	exports.enterKoukikourei = function(koukikourei, done){
+		request("enter_koukikourei", koukikourei, "POST", function(err, result){
+			if( err ){
+				done(err);
+				return;
+			}
+			koukikourei.koukikourei_id = result;
+			done();
+		});
+	};
+
+	exports.getRoujin = function(roujinId, cb){
+		request("get_roujin", { roujin_id: roujinId }, "GET", cb);
+	};
+
+	exports.updateRoujin = function(roujin, done){
+		request("update_roujin", roujin, "POST", done);
+	};
+
+	exports.deleteRoujin = function(roujinId, done){
+		request("delete_roujin", { roujin_id: roujinId }, "POST", done);
+	};
+
+	exports.enterRoujin = function(roujin, done){
+		request("enter_roujin", roujin, "POST", function(err, result){
+			if( err ){
+				done(err);
+				return;
+			}
+			roujin.roujin_id = result;
+			done();
+		});
+	};
+
+	exports.getKouhi = function(kouhiId, cb){
+		request("get_kouhi", { kouhi_id: kouhiId }, "GET", cb);
+	};
+
+	exports.updateKouhi = function(kouhi, done){
+		request("update_kouhi", kouhi, "POST", done);
+	};
+
+	exports.deleteKouhi = function(kouhiId, done){
+		request("delete_kouhi", { kouhi_id: kouhiId }, "POST", done);
+	};
+
+	exports.enterKouhi = function(kouhi, done){
+		request("enter_kouhi", kouhi, "POST", function(err, result){
+			if( err ){
+				done(err);
+				return;
+			}
+			kouhi.kouhi_id = result;
+			done();
+		});
+	};
+
+	exports.listRecentlyEnteredPatients = function(n, cb){
+		request("list_recently_entered_patients", {n : n}, "GET", cb);
+	};
+
+	exports.deletePatient = function(patientId, done){
+		request("delete_patient", { patient_id: patientId }, "POST", done);
+	};
+
+
 
 /***/ },
-/* 3 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(global, process) {(function (global, undefined) {
@@ -803,10 +1851,10 @@
 	    attachTo.clearImmediate = clearImmediate;
 	}(typeof self === "undefined" ? typeof global === "undefined" ? this : global : self));
 
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(4)))
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(9)))
 
 /***/ },
-/* 4 */
+/* 9 */
 /***/ function(module, exports) {
 
 	// shim for using process in browser
@@ -992,10 +2040,10 @@
 
 
 /***/ },
-/* 5 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(setImmediate) {"use strict";
+	"use strict";
 
 	(function(exports){
 
@@ -1189,105 +2237,249 @@
 
 	exports.fetchJson = function (url, opt, cb){
 		exports.fetch(url, opt, "json", function(err, result){
-			setImmediate(function(){
+			setTimeout(function(){
 				cb(err, result);
-			});
+			}, 0);
+	//		setImmediate(function(){
+	//			cb(err, result);
+	//		});
 		});
 	}
 
 	exports.fetchText = function (url, opt, cb){
 		exports.fetch(url, opt, "text", function(err, result){
-			setImmediate(function(){
+			setTimeout(function(){
 				cb(err, result);
-			});
+			}, 0);
+	//		setImmediate(function(){
+	//			cb(err, result);
+	//		});
 		});
 	}
 
 	})( true ? exports : (window.conti = {}));
 
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(6).setImmediate))
 
 /***/ },
-/* 6 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(setImmediate, clearImmediate) {var nextTick = __webpack_require__(4).nextTick;
-	var apply = Function.prototype.apply;
-	var slice = Array.prototype.slice;
-	var immediateIds = {};
-	var nextImmediateId = 0;
+	"use strict";
 
-	// DOM APIs, for completeness
+	(function(exports){
 
-	exports.setTimeout = function() {
-	  return new Timeout(apply.call(setTimeout, window, arguments), clearTimeout);
-	};
-	exports.setInterval = function() {
-	  return new Timeout(apply.call(setInterval, window, arguments), clearInterval);
-	};
-	exports.clearTimeout =
-	exports.clearInterval = function(timeout) { timeout.close(); };
-
-	function Timeout(id, clearFn) {
-	  this._id = id;
-	  this._clearFn = clearFn;
+	function iterExec(i, funs, done){
+		if( i >= funs.length ){
+			done();
+			return;
+		}
+		var f = funs[i];
+		f(function(err){
+			if( err ){
+				done(err);
+				return;
+			}
+			iterExec(i+1, funs, done);
+		})
 	}
-	Timeout.prototype.unref = Timeout.prototype.ref = function() {};
-	Timeout.prototype.close = function() {
-	  this._clearFn.call(window, this._id);
+
+	exports.exec = function(funs, done){
+		funs = funs.slice();
+		iterExec(0, funs, done);
 	};
 
-	// Does not start the time, just sets up the members needed.
-	exports.enroll = function(item, msecs) {
-	  clearTimeout(item._idleTimeoutId);
-	  item._idleTimeout = msecs;
+	exports.execPara = function(funs, done){
+		if( funs.length === 0 ){
+			done();
+			return;
+		}
+		funs = funs.slice();
+		var n = funs.length;
+		var no_more = false;
+		funs.forEach(function(f){
+			if( no_more ){
+				return;
+			}
+			f(function(err){
+				if( no_more ){
+					return;
+				}
+				if( err ){
+					no_more = true;
+					done(err);
+					return;
+				}
+				n -= 1;
+				if( n === 0 ){
+					done();
+				}
+			})
+		})
+	}
+
+	function iterForEach(i, arr, fn, done){
+		if( i >= arr.length ){
+			done();
+			return;
+		}
+		fn(arr[i], function(err){
+			if( err ){
+				done(err);
+				return;
+			}
+			iterForEach(i+1, arr, fn, done);
+		})
+	}
+
+	exports.forEach = function(arr, fn, done){
+		arr = arr.slice();
+		iterForEach(0, arr, fn, done);
 	};
 
-	exports.unenroll = function(item) {
-	  clearTimeout(item._idleTimeoutId);
-	  item._idleTimeout = -1;
+	exports.forEachPara = function(arr, fn, done){
+		if( arr.length === 0 ){
+			done();
+			return;
+		}
+		arr = arr.slice();
+		var n = arr.length;
+		var no_more = false;
+		arr.forEach(function(ele){
+			if( no_more ){
+				return;
+			}
+			fn(ele, function(err){
+				if( no_more ){
+					return;
+				}
+				if( err ){
+					no_more = true;
+					done(err);
+					return;
+				}
+				n -= 1;
+				if( n === 0 ){
+					done();
+				}
+			})
+		});
 	};
 
-	exports._unrefActive = exports.active = function(item) {
-	  clearTimeout(item._idleTimeoutId);
+	function Queue(){
+		this.queue = [];
+	}
 
-	  var msecs = item._idleTimeout;
-	  if (msecs >= 0) {
-	    item._idleTimeoutId = setTimeout(function onTimeout() {
-	      if (item._onTimeout)
-	        item._onTimeout();
-	    }, msecs);
-	  }
+	Queue.prototype.push = function(fn, cb){
+		this.queue.push({
+			fn: fn,
+			cb: cb
+		});
+		if( this.queue.length === 1 ){
+			this.run();
+		}
+	}
+
+	Queue.prototype.run = function(){
+		if( this.queue.length === 0 ){
+			return;
+		}
+		var entry = this.queue[0];
+		var fn = entry.fn;
+		var cb = entry.cb;
+		var self = this;
+		fn(function(){
+			var args = [].slice.call(arguments);
+			cb.apply(undefined, args);
+			if( self.queue.length > 0 && self.queue[0] === entry ){
+				self.queue.shift();
+				self.run();
+			}
+		})
+	}
+
+	var theQueue = new Queue();
+
+	exports.enqueue = function(fn, cb){
+		theQueue.push(fn, cb);
 	};
 
-	// That's not how node.js implements it but the exposed api is the same.
-	exports.setImmediate = typeof setImmediate === "function" ? setImmediate : function(fn) {
-	  var id = nextImmediateId++;
-	  var args = arguments.length < 2 ? false : slice.call(arguments, 1);
-
-	  immediateIds[id] = true;
-
-	  nextTick(function onNextTick() {
-	    if (immediateIds[id]) {
-	      // fn.call() is faster so we optimize for the common use-case
-	      // @see http://jsperf.com/call-apply-segu
-	      if (args) {
-	        fn.apply(null, args);
-	      } else {
-	        fn.call(null);
-	      }
-	      // Prevent ids from leaking
-	      exports.clearImmediate(id);
-	    }
-	  });
-
-	  return id;
+	exports.mapPara = function(arr, fn, cb){
+		var index = 0;
+		var dataArr = arr.map(function(value){
+			return {
+				index: index++,
+				value: value
+			}
+		});
+		var retArr = [];
+		exports.forEachPara(dataArr, function(data, done){
+			var value = fn(data.value, function(err, result){
+				if( err ){
+					done(err);
+					return;
+				}
+				retArr[data.index] = result;
+				done();
+			});
+		}, function(err){
+			if( err ){
+				cb(err);
+				return;
+			}
+			cb(undefined, retArr);
+		})
 	};
 
-	exports.clearImmediate = typeof clearImmediate === "function" ? clearImmediate : function(id) {
-	  delete immediateIds[id];
-	};
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(6).setImmediate, __webpack_require__(6).clearImmediate))
+	exports.fetch = function(url, opt, op, cb){
+		fetch(url, opt)
+		.then(function(response){
+			if( response.ok ){
+				response[op]()
+				.then(function(result){
+					cb(undefined, result);
+				})
+				.catch(function(err){
+					cb(err.message);
+				})
+			} else { 
+				response.text()
+				.then(function(text){
+					cb(text);
+				})
+				.catch(function(err){
+					cb(err.message);
+				})
+			}
+		})
+		.catch(function(err){
+			cb(err.message);
+		})
+	}
+
+	exports.fetchJson = function (url, opt, cb){
+		exports.fetch(url, opt, "json", function(err, result){
+			setTimeout(function(){
+				cb(err, result);
+			}, 0);
+	//		setImmediate(function(){
+	//			cb(err, result);
+	//		});
+		});
+	}
+
+	exports.fetchText = function (url, opt, cb){
+		exports.fetch(url, opt, "text", function(err, result){
+			setTimeout(function(){
+				cb(err, result);
+			}, 0);
+	//		setImmediate(function(){
+	//			cb(err, result);
+	//		});
+		});
+	}
+
+	})( true ? exports : (window.conti = {}));
+
 
 /***/ }
 /******/ ]);
