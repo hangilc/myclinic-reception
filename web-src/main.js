@@ -57,10 +57,25 @@ domStartVisitButton.addEventListener("click", function(){
 			title: "患者受付",
 			init: function(content, close){
 				StartVisit.render(content, patient, {
-					onClose: close	
+					onClose: close,
+					onError: function(err){
+						alert(err);
+						close();
+					},
+					onEnter: function(){
+						console.log("onEnter");
+						var e = new Event("new-visit", { bubbles: true });
+						domStartVisitButton.dispatchEvent(e);
+						close();
+					}
 				});
 			}
 		});
 	});
+});
+
+document.body.addEventListener("new-visit", function(){
+	console.log("body new-visit");
+	updateWqueue();
 });
 

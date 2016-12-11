@@ -103,11 +103,26 @@
 				title: "患者受付",
 				init: function(content, close){
 					StartVisit.render(content, patient, {
-						onClose: close	
+						onClose: close,
+						onError: function(err){
+							alert(err);
+							close();
+						},
+						onEnter: function(){
+							console.log("onEnter");
+							var e = new Event("new-visit", { bubbles: true });
+							domStartVisitButton.dispatchEvent(e);
+							close();
+						}
 					});
 				}
 			});
 		});
+	});
+
+	document.body.addEventListener("new-visit", function(){
+		console.log("body new-visit");
+		updateWqueue();
 	});
 
 
@@ -2791,13 +2806,31 @@
 	var hogan = __webpack_require__(2);
 	var tmplSrc = __webpack_require__(14);
 	var tmpl = hogan.compile(tmplSrc);
+	var Util = __webpack_require__(15);
+	var service = __webpack_require__(7);
+	var moment = __webpack_require__(17);
 
 	exports.render = function(dom, patient, handlers){
-		var data = patient;
+		var data = {};
+		Object.keys(patient).forEach(function(key){
+			data[key] = patient[key];
+		});
+		data.birth_day_as_kanji = Util.birthdayAsKanji(patient.birth_day);
+		data.age = Util.calcAge(patient.birth_day);
 		var html = tmpl.render(data);
 		dom.innerHTML = html
 		dom.querySelector(".cancel").addEventListener("click", function(){
 			handlers.onClose();
+		});
+		dom.querySelector(".enter").addEventListener("click", function(){
+			var at = moment().format("YYYY-MM-DD HH:mm:ss");
+			service.startVisit(patient.patient_id, at, function(err){
+				if( err ){
+					handlers.onError(err);
+					return;
+				}
+				handlers.onEnter();
+			});
 		});
 	};
 
@@ -2816,7 +2849,18 @@
 	var moment = __webpack_require__(17);
 
 	exports.birthdayAsKanji = function(birthday){
-		
+		if( !birthday || birthday === "0000-00-00" ){
+			return "???";
+		}
+		return kanjidate.format(kanjidate.f2, birthday);
+	};
+
+	exports.calcAge = function(birthday){
+		if( !birthday || birthday === "0000-00-00" ){
+			return "??";
+		}
+		var bd = moment(birthday);
+		return moment().diff(bd, "years");
 	};
 
 
