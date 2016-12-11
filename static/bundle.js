@@ -50,11 +50,13 @@
 	var modal = __webpack_require__(12);
 	var StartVisit = __webpack_require__(13);
 	var Util = __webpack_require__(15);
+	var PatientInfo = __webpack_require__(132);
 
 	var domUpdateWqueueButton = document.getElementById("update-wqueue-button");
 	var domWqueueTable = document.getElementById("wqueue-table");
 	var domPatientIdInput = document.getElementById("patient-id-input");
 	var domStartVisitButton = document.getElementById("start-visit-button");
+	var domPatientBasicInfoLink = document.querySelector(".patient-info-button");
 
 	updateWqueue();
 
@@ -109,9 +111,9 @@
 							close();
 						},
 						onEnter: function(){
-							console.log("onEnter");
 							var e = new Event("new-visit", { bubbles: true });
 							domStartVisitButton.dispatchEvent(e);
+							domPatientIdInput.value = "";
 							close();
 						}
 					});
@@ -125,6 +127,25 @@
 		updateWqueue();
 	});
 
+	domPatientBasicInfoLink.addEventListener("click", function(){
+		var patientId = domPatientIdInput.value;
+		if( patientId === "" ){
+			alert("患者番号が入力されていません。");
+			return;
+		}
+		if( !(patientId.match(/^\d+$/)) ){
+			alert("患者番号が不適切です。");
+			return;
+		}
+		patientId = +patientId;
+		service.getPatient(patientId, function(err, patient){
+			if( err ){
+				alert(err);
+				return;
+			}
+			PatientInfo.add(patient);
+		});
+	});
 
 
 /***/ },
@@ -2861,6 +2882,14 @@
 		}
 		var bd = moment(birthday);
 		return moment().diff(bd, "years");
+	};
+
+	exports.sexAsKanji = function(sex){
+		switch(sex){
+			case "M": return "男";
+			case "F": return "女";
+			default: return "??";
+		}
 	};
 
 
@@ -18148,6 +18177,96 @@
 
 	})));
 
+
+/***/ },
+/* 128 */,
+/* 129 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var hogan = __webpack_require__(2);
+	var tmplSrc = __webpack_require__(130);
+	var tmpl = hogan.compile(tmplSrc);
+
+	var container = document.querySelector(".workarea-panel-container");
+
+	exports.add = function(title, render){
+		var dom = document.createElement("div");
+		dom.innerHTML = tmpl.render({ title: title });
+		render(dom.querySelector(".content"));
+		if( container.firstChild ){
+			container.insertBefore(dom.firstChild, container.firstChild);
+		} else {
+			container.appendChild(dom.firstChild);
+		}
+		dom.innerHTML = "";
+	};
+
+
+/***/ },
+/* 130 */
+/***/ function(module, exports) {
+
+	module.exports = "<div class=\"workarea-panel\">\r\n\t<div class=\"title\">{{title}}</div>\r\n\t<div class=\"content\"></div>\r\n</div>\r\n"
+
+/***/ },
+/* 131 */
+/***/ function(module, exports) {
+
+	module.exports = "\r\n<table>\r\n<tr>\r\n\t<td>患者番号</td>\r\n\t<td>{{patient_id}}</td>\r\n</tr>\r\n<tr>\r\n\t<td>名前</td>\r\n\t<td>{{last_name}} {{first_name}}</td>\r\n</tr>\r\n<tr>\r\n\t<td>よみ</td>\r\n\t<td>{{last_name_yomi}} {{first_name_yomi}}</td>\r\n</tr>\r\n<tr>\r\n\t<td>生年月日</td>\r\n\t<td>{{birth_day_as_kanji}} （{{age}}才）</td>\r\n</tr>\r\n<tr>\r\n\t<td>性別</td>\r\n\t<td>{{sex_as_kanji}}</td>\r\n</tr>\r\n<tr>\r\n\t<td>住所</td>\r\n\t<td>{{address}}</td>\r\n</tr>\r\n<tr>\r\n\t<td>電話</td>\r\n\t<td>{{phone}}</td>\r\n</tr>\r\n</table>\r\n<div class=\"cmd-wrapper\" style=\"text-align:right;margin-right:4px\">\r\n\t<a href=\"javascript:void(0)\" class=\"cmd-link edit-basic\">編集</a>\r\n</div>\r\n"
+
+/***/ },
+/* 132 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var Panel = __webpack_require__(129);
+	var Subpanel = __webpack_require__(133);
+	var hogan = __webpack_require__(2);
+	var tmplSrc = __webpack_require__(131);
+	var tmpl = hogan.compile(tmplSrc);
+	var Util = __webpack_require__(15);
+
+	exports.add = function(patient){
+		Panel.add("患者情報", function(dom){
+			var data = {
+				birth_day_as_kanji: Util.birthdayAsKanji(patient.birth_day),
+				age: Util.calcAge(patient.birth_day),
+				sex_as_kanji: Util.sexAsKanji(patient.sex)
+			};
+			Object.keys(patient).forEach(function(key){
+				data[key] = patient[key];
+			});
+			var sub = Subpanel.create("基本情報", function(subdom){
+				subdom.innerHTML = tmpl.render(data);
+			});
+			dom.appendChild(sub);
+		});
+	};
+
+
+/***/ },
+/* 133 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var hogan = __webpack_require__(2);
+	var tmplSrc = __webpack_require__(134);
+	var tmpl = hogan.compile(tmplSrc);
+
+	exports.create = function(legend, render){
+		var dom = document.createElement("div");
+		dom.innerHTML = tmpl.render({ legend: legend });
+		render(dom.querySelector(".content"));
+		var e = dom.removeChild(dom.firstChild);
+		dom.innerHTML = "";
+		dom = null;
+		return e;
+	};
+
+
+/***/ },
+/* 134 */
+/***/ function(module, exports) {
+
+	module.exports = "<fieldset class=\"subpanel\" style=\"margin-top:6px\">\r\n\t<legend>{{legend}}</legend>\r\n\t<div class=\"content\"></div>\r\n</fieldset>\r\n"
 
 /***/ }
 /******/ ]);

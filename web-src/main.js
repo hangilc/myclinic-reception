@@ -4,11 +4,13 @@ var conti = require("conti");
 var modal = require("../myclinic-modal.js");
 var StartVisit = require("./start-visit.js");
 var Util = require("../reception-util.js");
+var PatientInfo = require("./patient-info.js");
 
 var domUpdateWqueueButton = document.getElementById("update-wqueue-button");
 var domWqueueTable = document.getElementById("wqueue-table");
 var domPatientIdInput = document.getElementById("patient-id-input");
 var domStartVisitButton = document.getElementById("start-visit-button");
+var domPatientBasicInfoLink = document.querySelector(".patient-info-button");
 
 updateWqueue();
 
@@ -63,9 +65,9 @@ domStartVisitButton.addEventListener("click", function(){
 						close();
 					},
 					onEnter: function(){
-						console.log("onEnter");
 						var e = new Event("new-visit", { bubbles: true });
 						domStartVisitButton.dispatchEvent(e);
+						domPatientIdInput.value = "";
 						close();
 					}
 				});
@@ -79,3 +81,22 @@ document.body.addEventListener("new-visit", function(){
 	updateWqueue();
 });
 
+domPatientBasicInfoLink.addEventListener("click", function(){
+	var patientId = domPatientIdInput.value;
+	if( patientId === "" ){
+		alert("患者番号が入力されていません。");
+		return;
+	}
+	if( !(patientId.match(/^\d+$/)) ){
+		alert("患者番号が不適切です。");
+		return;
+	}
+	patientId = +patientId;
+	service.getPatient(patientId, function(err, patient){
+		if( err ){
+			alert(err);
+			return;
+		}
+		PatientInfo.add(patient);
+	});
+});

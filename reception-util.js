@@ -15,3 +15,11 @@ exports.calcAge = function(birthday){
 	var bd = moment(birthday);
 	return moment().diff(bd, "years");
 };
+
+exports.sexAsKanji = function(sex){
+	switch(sex){
+		case "M": return "男";
+		case "F": return "女";
+		default: return "??";
+	}
+};
