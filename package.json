@@ -23,7 +23,7 @@
     "kanjidate": "^1.1.0",
     "moment": "^2.17.1",
     "myclinic-consts": "^1.0.0",
-    "myclinic-service-api": "~1.0.10",
+    "myclinic-service-api": "^1.0.11",
     "myclinic-web": "^1.0.4",
     "raw-loader": "^0.5.1",
     "webpack": "^1.13.3"

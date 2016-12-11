@@ -23,3 +23,7 @@ exports.sexAsKanji = function(sex){
 		default: return "??";
 	}
 };
+
+exports.todayAsSqlDate = function(){
+	return moment().format("YYYY-MM-DD");
+};

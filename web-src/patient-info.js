@@ -1,23 +1,22 @@
 var Panel = require("./panel.js");
 var Subpanel = require("./subpanel.js");
 var hogan = require("hogan.js");
-var tmplSrc = require("raw!./patient-basic-info.html");
-var tmpl = hogan.compile(tmplSrc);
 var Util = require("../reception-util.js");
+var BasicInfo = require("./patient-basic-info.js");
 
-exports.add = function(patient){
+exports.add = function(data){
+	var patient = data.patient;
+	var hoken = data.hoken;
 	Panel.add("患者情報", function(dom){
-		var data = {
-			birth_day_as_kanji: Util.birthdayAsKanji(patient.birth_day),
-			age: Util.calcAge(patient.birth_day),
-			sex_as_kanji: Util.sexAsKanji(patient.sex)
-		};
-		Object.keys(patient).forEach(function(key){
-			data[key] = patient[key];
-		});
 		var sub = Subpanel.create("基本情報", function(subdom){
-			subdom.innerHTML = tmpl.render(data);
+			BasicInfo.render(subdom, patient);
 		});
 		dom.appendChild(sub);
+		if( hoken.shahokokuho_list.length > 0 ){
+			sub = Subpanel.create("社保・国保", function(subdom){
+				
+			});
+			dom.appendChild(sub);
+		}
 	});
 };

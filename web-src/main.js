@@ -10,7 +10,7 @@ var domUpdateWqueueButton = document.getElementById("update-wqueue-button");
 var domWqueueTable = document.getElementById("wqueue-table");
 var domPatientIdInput = document.getElementById("patient-id-input");
 var domStartVisitButton = document.getElementById("start-visit-button");
-var domPatientBasicInfoLink = document.querySelector(".patient-info-button");
+var domPatientInfoLink = document.querySelector(".patient-info-button");
 
 updateWqueue();
 
@@ -81,7 +81,7 @@ document.body.addEventListener("new-visit", function(){
 	updateWqueue();
 });
 
-domPatientBasicInfoLink.addEventListener("click", function(){
+domPatientInfoLink.addEventListener("click", function(){
 	var patientId = domPatientIdInput.value;
 	if( patientId === "" ){
 		alert("患者番号が入力されていません。");
@@ -92,11 +92,43 @@ domPatientBasicInfoLink.addEventListener("click", function(){
 		return;
 	}
 	patientId = +patientId;
-	service.getPatient(patientId, function(err, patient){
+	fetchPatientInfo(patientId, Util.todayAsSqlDate(), function(err, result){
 		if( err ){
 			alert(err);
 			return;
 		}
-		PatientInfo.add(patient);
+		PatientInfo.add(result);
 	});
 });
+
+function fetchPatientInfo(patientId, at, cb){
+	var data = {};
+	conti.exec([
+		function(done){
+			service.getPatient(patientId, function(err, result){
+				if( err ){
+					done(err);
+					return;
+				}
+				data.patient = result;
+				done();
+			});
+		},
+		function(done){
+			service.listAvailableHoken(patientId, at, function(err, result){
+				if( err ){
+					done(err);
+					return;
+				}
+				data.hoken = result;
+				done();
+			});
+		}
+	], function(err){
+		if( err ){
+			cb(err);
+			return;
+		}
+		cb(undefined, data);
+	});
+}
