@@ -17997,7 +17997,7 @@
 	var Subpanel = __webpack_require__(130);
 	var hogan = __webpack_require__(2);
 	var Util = __webpack_require__(14);
-	var BasicInfo = __webpack_require__(133);
+	var BasicInfo = __webpack_require__(132);
 
 	exports.add = function(data){
 		var patient = data.patient;
@@ -18073,16 +18073,10 @@
 
 /***/ },
 /* 132 */
-/***/ function(module, exports) {
-
-	module.exports = "\r\n<table>\r\n<tr>\r\n\t<td>患者番号</td>\r\n\t<td>{{patient_id}}</td>\r\n</tr>\r\n<tr>\r\n\t<td>名前</td>\r\n\t<td>{{last_name}} {{first_name}}</td>\r\n</tr>\r\n<tr>\r\n\t<td>よみ</td>\r\n\t<td>{{last_name_yomi}} {{first_name_yomi}}</td>\r\n</tr>\r\n<tr>\r\n\t<td>生年月日</td>\r\n\t<td>{{birth_day_as_kanji}} （{{age}}才）</td>\r\n</tr>\r\n<tr>\r\n\t<td>性別</td>\r\n\t<td>{{sex_as_kanji}}</td>\r\n</tr>\r\n<tr>\r\n\t<td>住所</td>\r\n\t<td>{{address}}</td>\r\n</tr>\r\n<tr>\r\n\t<td>電話</td>\r\n\t<td>{{phone}}</td>\r\n</tr>\r\n</table>\r\n<div class=\"cmd-wrapper\" style=\"text-align:right;margin-right:4px\">\r\n\t<a href=\"javascript:void(0)\" class=\"cmd-link edit-basic\">編集</a>\r\n</div>\r\n"
-
-/***/ },
-/* 133 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var hogan = __webpack_require__(2);
-	var tmplSrc = __webpack_require__(132);
+	var tmplSrc = __webpack_require__(133);
 	var tmpl = hogan.compile(tmplSrc);
 	var Util = __webpack_require__(14);
 
@@ -18099,6 +18093,12 @@
 		dom.innerHTML = html;
 	};
 
+
+/***/ },
+/* 133 */
+/***/ function(module, exports) {
+
+	module.exports = "\r\n<table>\r\n<tr>\r\n\t<td>患者番号</td>\r\n\t<td>{{patient_id}}</td>\r\n</tr>\r\n<tr>\r\n\t<td>名前</td>\r\n\t<td>{{last_name}} {{first_name}}</td>\r\n</tr>\r\n<tr>\r\n\t<td>よみ</td>\r\n\t<td>{{last_name_yomi}} {{first_name_yomi}}</td>\r\n</tr>\r\n<tr>\r\n\t<td>生年月日</td>\r\n\t<td>{{birth_day_as_kanji}} （{{age}}才）</td>\r\n</tr>\r\n<tr>\r\n\t<td>性別</td>\r\n\t<td>{{sex_as_kanji}}</td>\r\n</tr>\r\n<tr>\r\n\t<td>住所</td>\r\n\t<td>{{address}}</td>\r\n</tr>\r\n<tr>\r\n\t<td>電話</td>\r\n\t<td>{{phone}}</td>\r\n</tr>\r\n</table>\r\n<div class=\"cmd-wrapper\" style=\"text-align:right;margin-right:4px\">\r\n\t<a href=\"javascript:void(0)\" class=\"cmd-link edit-basic\">編集</a>\r\n</div>\r\n"
 
 /***/ }
 /******/ ]);
