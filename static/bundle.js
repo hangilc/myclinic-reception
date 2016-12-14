@@ -179,6 +179,20 @@
 		});
 	}
 
+	document.addEventListener("broadcast-shahokokuho-entered", function(event){
+		var shahokokuho = event.detail;
+		console.log("shahokokuho-entered", shahokokuho);
+		var e = new CustomEvent("shahokokuho-entered", { detail: shahokokuho });
+		var doms = document.querySelectorAll(".listening-to-shahokokuho-entered");
+		for(var i=0;i<doms.length;i++){
+			var dom = doms[i];
+			console.log(dom);
+			dom.dispatchEvent(e);
+		}
+	});
+
+
+
 
 /***/ },
 /* 1 */
@@ -18010,6 +18024,11 @@
 		var patient = data.patient;
 		var hoken = data.hoken;
 		Panel.add("患者情報", function(dom, wrapper){
+			wrapper.classList.add("listening-to-shahokokuho-entered");
+			wrapper.addEventListener("shahokokuho-entered", function(event){
+				var shahokokuho = event.detail;
+				console.log("PATIENT-INFO shahokokuho-entered", shahokokuho);
+			});
 			var sub = Subpanel.create("基本情報", function(subdom){
 				BasicInfo.render(subdom, patient);
 			});
@@ -18067,11 +18086,16 @@
 	function newShahokokuho(patient, wrapper){
 		var sub = Subpanel.create("新規社保・国保入力", function(dom){
 			var form = ShahokokuhoForm.create({
-				honnin: false,
-				kourei: 0	
+				patient: patient,
+				shahokokuho: {
+					patient_id: patient.patient_id,
+					honnin: false,
+					kourei: 0	
+				}
 			}, {
 				onEntered: function(shahokokuho){
-					console.log(shahokokuho);
+					var e = new CustomEvent("broadcast-shahokokuho-entered", { bubbles: true, detail: shahokokuho });
+					wrapper.dispatchEvent(e);
 					sub.parentNode.removeChild(sub);
 				},
 				onCancel: function(){
@@ -18399,10 +18423,20 @@
 	var dateInputTmplSrc = __webpack_require__(147);
 	var dateInputTmpl = hogan.compile(dateInputTmplSrc);
 	var DateInput = __webpack_require__(148);
+	var conti = __webpack_require__(10);
+	var service = __webpack_require__(7);
 
-	exports.create = function(shahokokuho, callbacks){
+	exports.create = function(data, callbacks){
+		var patient = data.patient;
+		var shahokokuho = data.shahokokuho;
 		var dom = document.createElement("div");
-		var data = shahokokuho;
+		var data = {
+			last_name: patient.last_name,
+			first_name: patient.first_name
+		};
+		Object.keys(shahokokuho).forEach(function(key){
+			data[key] = shahokokuho[key];
+		});
 		dom.innerHTML = tmpl.render(data, {
 			"date-input": dateInputTmpl
 		});
@@ -18415,21 +18449,73 @@
 			var values = formValues(dom, validFrom, validUpto);
 			var validFromValue = validFrom.getSqlDate();
 			var validUptoValue = validUpto.getSqlDate();
-			var data = {};
+			var data = { patient_id: patient.patient_id };
 			var errors = [];
 			if( !values.hokensha_bangou.match(/^\d+$/ ) ){
 				errors.push("保険者番号の入力が適切でありません。");
 			} else {
 				data.hokensha_bangou = +values.hokensha_bangou;
 			}
+
 			if( values.hihokensha_kigou === "" && values.hihokensha_bangou === "" ){
 				errors.push("被保険者記号・番号が入力されていません。");
 			} else {
 				data.hihokensha_kigou = values.hihokensha_kigou;
 				data.hihokensha_bangou = values.hihokensha_bangou;
 			}
-			console.log(data);
-			console.log(errors);
+
+			if( values.honnin === "1" || values.honnin === "0" ){
+				data.honnin = +values.honnin;
+			} else {
+				errors.push("本人・家族の入力が不適切です。");
+			}
+
+			if( !validFromValue ){
+				errors.push("有効期限（から）の入力が不適切です。");
+			} else if( validFromValue === "0000-00-00" ){
+				errors.push("有効期限（から）が入力されていません。");
+			} else {
+				data.valid_from = validFromValue;
+			}
+
+			if( !validUptoValue ){
+				errors.push("有効期限（まで）の入力が不適切です。");
+			} else {
+				data.valid_upto = validUptoValue;
+			}
+
+			if( !values.kourei.match(/^\d+$/) ){
+				errors.push("高齢の入力が不適切です。");
+			} else {
+				data.kourei = +values.kourei;	
+			}
+
+			if( errors.length > 0 ){
+				reportError(dom, errors);
+				return;
+			}
+			var newShahokokuho;
+			conti.exec([
+				function(done){
+					service.enterShahokokuho(data, done);
+				},
+				function(done){
+					service.getShahokokuho(data.shahokokuho_id, function(err, result){
+						if( err ){
+							done(err);
+							return;
+						}
+						newShahokokuho = result;
+						done();
+					});
+				}
+			], function(err){
+				if( err ){
+					alert(err);
+					return;
+				}
+				callbacks.onEntered(newShahokokuho);
+			});
 		});
 		dom.querySelector(".cancel").addEventListener("click", function(){
 			callbacks.onCancel();
@@ -18447,13 +18533,25 @@
 		};
 	}
 
+	function reportError(dom, errors){
+		var box = dom.querySelector(".error");
+		box.innerHTML = "";
+		errors.forEach(function(err){
+			var row = document.createElement("div");
+			var t = document.createTextNode(err);
+			row.appendChild(t);
+			box.appendChild(row);
+		});
+		box.style.display = "block";
+	}
+
 
 
 /***/ },
 /* 146 */
 /***/ function(module, exports) {
 
-	module.exports = "<div>\r\n\t<div class=\"error\" style=\"display:none\"></div>\r\n    <form onsubmit=\"return false\" class=\"shahokokuho-form\">\r\n        <table>\r\n            <tr>\r\n                <td><label for=\"hokensha_bangou\">保険者番号</label></td>\r\n                <td><input name=\"hokensha_bangou\" value=\"{{hokensha_bangou}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"hihokensha_kigou\">被保険者記号</label></td>\r\n                <td><input name=\"hihokensha_kigou\" value=\"{{hihokensha_kigou}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"hihokensha_bangou\">被保険者番号</label></td>\r\n                <td><input name=\"hihokensha_bangou\" value=\"{{hihokensha_bangou}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"honnin\">本人・家族</label></td>\r\n                <td><input type=\"radio\" name=\"honnin\" value=\"1\" {{#honnin}}checked{{/honnin}}/>本人\r\n                    <input type=\"radio\" name=\"honnin\" value=\"0\" {{^honnin}}checked{{/honnin}}/>家族</td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_from\">有効期限（から）</label></td>\r\n                <td class=\"valid-from-element\">{{> date-input}}</td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_upto\">有効期限（まで）</label></td>\r\n                <td class=\"valid-upto-element\">{{> date-input}}</td>\r\n            </tr>\r\n            <tr valign=\"top\">\r\n                <td><label for=\"kourei\">高齢</label></td>\r\n                <td>\r\n                    <span style=\"white-space: nowrap\"><input type=\"radio\" name=\"kourei\" value=\"0\"/>高齢でない</span><br class=\"kourei-br\"/>\r\n                    <span style=\"white-space: nowrap\"><input type=\"radio\" name=\"kourei\" value=\"1\"/>１割</span>\r\n                    <span style=\"white-space: nowrap\"><input type=\"radio\" name=\"kourei\" value=\"2\"/>２割</span>\r\n                    <span style=\"white-space: nowrap\"><input type=\"radio\" name=\"kourei\" value=\"3\"/>３割</span>\r\n                </td>\r\n            </tr>\r\n        </table>\r\n\t    <div>\r\n\t        <button class=\"enter\">入力</button>\r\n\t        <button class=\"cancel\">キャンセル</button>\r\n\t    </div>\r\n    </form>\r\n</div>\r\n"
+	module.exports = "<div>\r\n\t<div style=\"font-weight:bold\">{{last_name}} {{first_name}}</div>\r\n\t<div class=\"error\" style=\"display:none\"></div>\r\n    <form onsubmit=\"return false\" class=\"shahokokuho-form\">\r\n        <table>\r\n            <tr>\r\n                <td><label for=\"hokensha_bangou\">保険者番号</label></td>\r\n                <td><input name=\"hokensha_bangou\" value=\"{{hokensha_bangou}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"hihokensha_kigou\">被保険者記号</label></td>\r\n                <td><input name=\"hihokensha_kigou\" value=\"{{hihokensha_kigou}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"hihokensha_bangou\">被保険者番号</label></td>\r\n                <td><input name=\"hihokensha_bangou\" value=\"{{hihokensha_bangou}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"honnin\">本人・家族</label></td>\r\n                <td><input type=\"radio\" name=\"honnin\" value=\"1\" {{#honnin}}checked{{/honnin}}/>本人\r\n                    <input type=\"radio\" name=\"honnin\" value=\"0\" {{^honnin}}checked{{/honnin}}/>家族</td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_from\">有効期限（から）</label></td>\r\n                <td class=\"valid-from-element\">{{> date-input}}</td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_upto\">有効期限（まで）</label></td>\r\n                <td class=\"valid-upto-element\">{{> date-input}}</td>\r\n            </tr>\r\n            <tr valign=\"top\">\r\n                <td><label for=\"kourei\">高齢</label></td>\r\n                <td>\r\n                    <span style=\"white-space: nowrap\"><input type=\"radio\" name=\"kourei\" value=\"0\"/>高齢でない</span><br class=\"kourei-br\"/>\r\n                    <span style=\"white-space: nowrap\"><input type=\"radio\" name=\"kourei\" value=\"1\"/>１割</span>\r\n                    <span style=\"white-space: nowrap\"><input type=\"radio\" name=\"kourei\" value=\"2\"/>２割</span>\r\n                    <span style=\"white-space: nowrap\"><input type=\"radio\" name=\"kourei\" value=\"3\"/>３割</span>\r\n                </td>\r\n            </tr>\r\n        </table>\r\n\t    <div>\r\n\t        <button class=\"enter\">入力</button>\r\n\t        <button class=\"cancel\">キャンセル</button>\r\n\t    </div>\r\n    </form>\r\n</div>\r\n"
 
 /***/ },
 /* 147 */

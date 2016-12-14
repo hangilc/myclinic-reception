@@ -15,6 +15,11 @@ exports.add = function(data){
 	var patient = data.patient;
 	var hoken = data.hoken;
 	Panel.add("患者情報", function(dom, wrapper){
+		wrapper.classList.add("listening-to-shahokokuho-entered");
+		wrapper.addEventListener("shahokokuho-entered", function(event){
+			var shahokokuho = event.detail;
+			console.log("PATIENT-INFO shahokokuho-entered", shahokokuho);
+		});
 		var sub = Subpanel.create("基本情報", function(subdom){
 			BasicInfo.render(subdom, patient);
 		});
@@ -72,11 +77,16 @@ exports.add = function(data){
 function newShahokokuho(patient, wrapper){
 	var sub = Subpanel.create("新規社保・国保入力", function(dom){
 		var form = ShahokokuhoForm.create({
-			honnin: false,
-			kourei: 0	
+			patient: patient,
+			shahokokuho: {
+				patient_id: patient.patient_id,
+				honnin: false,
+				kourei: 0	
+			}
 		}, {
 			onEntered: function(shahokokuho){
-				console.log(shahokokuho);
+				var e = new CustomEvent("broadcast-shahokokuho-entered", { bubbles: true, detail: shahokokuho });
+				wrapper.dispatchEvent(e);
 				sub.parentNode.removeChild(sub);
 			},
 			onCancel: function(){
