@@ -8,12 +8,12 @@ var ShahokokuhoDisp = require("./shahokokuho-disp.js");
 var KoukikoureiDisp = require("./koukikourei-disp.js");
 var RoujinDisp = require("./roujin-disp.js");
 var KouhiDisp = require("./kouhi-disp.js");
+var CommandBox = require("./patient-info-command-box.js");
 
 exports.add = function(data){
 	var patient = data.patient;
 	var hoken = data.hoken;
-	console.log(hoken);
-	Panel.add("患者情報", function(dom){
+	Panel.add("患者情報", function(dom, wrapper){
 		var sub = Subpanel.create("基本情報", function(subdom){
 			BasicInfo.render(subdom, patient);
 		});
@@ -42,5 +42,29 @@ exports.add = function(data){
 			});
 			dom.appendChild(sub);
 		});
+		var commandBox = CommandBox.create(patient.patient_id, {
+			onNewShahokokuho: function(){
+				console.log("new-shahokokuho");
+			},
+			onNewKoukikourei: function(){
+				console.log("new-koukikourei");
+			},
+			onNewKouhi: function(){
+				console.log("new-kouhi");
+
+			},
+			onEditAllHoken: function(){
+				console.log("edit-all-hoken");
+
+			},
+			onStartVisit: function(){
+				console.log("start-visit");
+
+			},
+			onClose: function(){
+				wrapper.parentNode.removeChild(wrapper);	
+			}
+		});
+		dom.appendChild(commandBox);
 	});
 };

@@ -18003,12 +18003,12 @@
 	var KoukikoureiDisp = __webpack_require__(137);
 	var RoujinDisp = __webpack_require__(139);
 	var KouhiDisp = __webpack_require__(141);
+	var CommandBox = __webpack_require__(143);
 
 	exports.add = function(data){
 		var patient = data.patient;
 		var hoken = data.hoken;
-		console.log(hoken);
-		Panel.add("患者情報", function(dom){
+		Panel.add("患者情報", function(dom, wrapper){
 			var sub = Subpanel.create("基本情報", function(subdom){
 				BasicInfo.render(subdom, patient);
 			});
@@ -18037,6 +18037,30 @@
 				});
 				dom.appendChild(sub);
 			});
+			var commandBox = CommandBox.create(patient.patient_id, {
+				onNewShahokokuho: function(){
+					console.log("new-shahokokuho");
+				},
+				onNewKoukikourei: function(){
+					console.log("new-koukikourei");
+				},
+				onNewKouhi: function(){
+					console.log("new-kouhi");
+
+				},
+				onEditAllHoken: function(){
+					console.log("edit-all-hoken");
+
+				},
+				onStartVisit: function(){
+					console.log("start-visit");
+
+				},
+				onClose: function(){
+					wrapper.parentNode.removeChild(wrapper);	
+				}
+			});
+			dom.appendChild(commandBox);
 		});
 	};
 
@@ -18054,7 +18078,7 @@
 	exports.add = function(title, render){
 		var dom = document.createElement("div");
 		dom.innerHTML = tmpl.render({ title: title });
-		render(dom.querySelector(".content"));
+		render(dom.querySelector(".content"), dom.firstChild);
 		if( container.firstChild ){
 			container.insertBefore(dom.firstChild, container.firstChild);
 		} else {
@@ -18292,6 +18316,57 @@
 /***/ function(module, exports) {
 
 	module.exports = "{{label}}\r\n"
+
+/***/ },
+/* 143 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var hogan = __webpack_require__(2);
+	var tmplSrc = __webpack_require__(144);
+	var tmpl = hogan.compile(tmplSrc);
+
+	exports.create = function(patient, callbacks){
+		var dom = document.createElement("div");
+		dom.innerHTML = tmpl.render({});
+		dom.querySelector(".new-shahokokuho").addEventListener("click", function(){
+			if( callbacks.onNewShahokokuho ){
+				callbacks.onNewShahokokuho();
+			}
+		});
+		dom.querySelector(".new-koukikourei").addEventListener("click", function(){
+			if( callbacks.onNewKoukikourei ){
+				callbacks.onNewKoukikourei();
+			}
+		});
+		dom.querySelector(".new-kouhi").addEventListener("click", function(){
+			if( callbacks.onNewKouhi ){
+				callbacks.onNewKouhi();
+			}
+		});
+		dom.querySelector(".edit-all-hoken").addEventListener("click", function(){
+			if( callbacks.onEditAllHoken ){
+				callbacks.onEditAllHoken();
+			}
+		});
+		dom.querySelector(".start-visit").addEventListener("click", function(){
+			if( callbacks.onStartVisit ){
+				callbacks.onStartVisit();
+			}
+		});
+		dom.querySelector(".close-panel").addEventListener("click", function(){
+			if( callbacks.onClose ){
+				callbacks.onClose();
+			}
+		});
+		return dom;
+	};
+
+
+/***/ },
+/* 144 */
+/***/ function(module, exports) {
+
+	module.exports = "\r\n\t<hr />\r\n\t<div style=\"margin-left:4px\">\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link new-shahokokuho\">社保・国保追加</a>\r\n\t\t|\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link new-koukikourei\">後期高齢追加</a>\r\n\t\t|\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link new-kouhi\">公費追加</a>\r\n\t\t|\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link edit-all-hoken\">全保険編集</a>\r\n\t</div>\r\n\t<div class=\"command-box\">\r\n\t\t<button class=\"start-visit\">診察受付</button>\r\n\t\t<button type=\"button\" class=\"close-panel\">閉じる</button>\r\n\t</div>\r\n"
 
 /***/ }
 /******/ ]);
