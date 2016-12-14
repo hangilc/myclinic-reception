@@ -1,4 +1,4 @@
-
+<div>
 	<div class="error" style="display:none"></div>
     <form onsubmit="return false" class="shahokokuho-form">
         <table>
@@ -16,16 +16,16 @@
             </tr>
             <tr>
                 <td><label for="honnin">本人・家族</label></td>
-                <td><input type="radio" name="honnin" value="1"/>本人
-                    <input type="radio" name="honnin" value="0"/>家族</td>
+                <td><input type="radio" name="honnin" value="1" {{#honnin}}checked{{/honnin}}/>本人
+                    <input type="radio" name="honnin" value="0" {{^honnin}}checked{{/honnin}}/>家族</td>
             </tr>
             <tr>
                 <td><label for="valid_from">有効期限（から）</label></td>
-                <td class="valid-from-element"></td>
+                <td class="valid-from-element">{{> date-input}}</td>
             </tr>
             <tr>
                 <td><label for="valid_upto">有効期限（まで）</label></td>
-                <td class="valid-upto-element"></td>
+                <td class="valid-upto-element">{{> date-input}}</td>
             </tr>
             <tr valign="top">
                 <td><label for="kourei">高齢</label></td>
@@ -42,3 +42,4 @@
 	        <button class="cancel">キャンセル</button>
 	    </div>
     </form>
+</div>

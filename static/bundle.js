@@ -18004,6 +18004,7 @@
 	var RoujinDisp = __webpack_require__(139);
 	var KouhiDisp = __webpack_require__(141);
 	var CommandBox = __webpack_require__(143);
+	var ShahokokuhoForm = __webpack_require__(145);
 
 	exports.add = function(data){
 		var patient = data.patient;
@@ -18039,7 +18040,7 @@
 			});
 			var commandBox = CommandBox.create(patient.patient_id, {
 				onNewShahokokuho: function(){
-					console.log("new-shahokokuho");
+					newShahokokuho(patient, wrapper);
 				},
 				onNewKoukikourei: function(){
 					console.log("new-koukikourei");
@@ -18050,7 +18051,6 @@
 				},
 				onEditAllHoken: function(){
 					console.log("edit-all-hoken");
-
 				},
 				onStartVisit: function(){
 					console.log("start-visit");
@@ -18063,6 +18063,27 @@
 			dom.appendChild(commandBox);
 		});
 	};
+
+	function newShahokokuho(patient, wrapper){
+		var sub = Subpanel.create("新規社保・国保入力", function(dom){
+			var form = ShahokokuhoForm.create({
+				honnin: false,
+				kourei: 0	
+			}, {
+				onEntered: function(shahokokuho){
+					console.log(shahokokuho);
+					sub.parentNode.removeChild(sub);
+				},
+				onCancel: function(){
+					sub.parentNode.removeChild(sub);
+				}
+			});
+			dom.appendChild(form);
+		});
+		var commands = wrapper.querySelector("[data-role=patient-info-commands]");
+		commands.parentNode.insertBefore(sub, commands);
+	}
+
 
 
 /***/ },
@@ -18366,7 +18387,163 @@
 /* 144 */
 /***/ function(module, exports) {
 
-	module.exports = "\r\n\t<hr />\r\n\t<div style=\"margin-left:4px\">\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link new-shahokokuho\">社保・国保追加</a>\r\n\t\t|\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link new-koukikourei\">後期高齢追加</a>\r\n\t\t|\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link new-kouhi\">公費追加</a>\r\n\t\t|\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link edit-all-hoken\">全保険編集</a>\r\n\t</div>\r\n\t<div class=\"command-box\">\r\n\t\t<button class=\"start-visit\">診察受付</button>\r\n\t\t<button type=\"button\" class=\"close-panel\">閉じる</button>\r\n\t</div>\r\n"
+	module.exports = "\r\n\t<hr style=\"border-top: 1px #999 solid\"/>\r\n\t<div style=\"margin-left:4px\" data-role=\"patient-info-commands\">\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link new-shahokokuho\">社保・国保追加</a>\r\n\t\t|\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link new-koukikourei\">後期高齢追加</a>\r\n\t\t|\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link new-kouhi\">公費追加</a>\r\n\t\t|\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link edit-all-hoken\">全保険編集</a>\r\n\t</div>\r\n\t<div class=\"command-box\">\r\n\t\t<button class=\"start-visit\">診察受付</button>\r\n\t\t<button type=\"button\" class=\"close-panel\">閉じる</button>\r\n\t</div>\r\n"
+
+/***/ },
+/* 145 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var hogan = __webpack_require__(2);
+	var tmplSrc = __webpack_require__(146);
+	var tmpl = hogan.compile(tmplSrc);
+	var dateInputTmplSrc = __webpack_require__(147);
+	var dateInputTmpl = hogan.compile(dateInputTmplSrc);
+	var DateInput = __webpack_require__(148);
+
+	exports.create = function(shahokokuho, callbacks){
+		var dom = document.createElement("div");
+		var data = shahokokuho;
+		dom.innerHTML = tmpl.render(data, {
+			"date-input": dateInputTmpl
+		});
+		var validFrom = new DateInput(dom.querySelector(".valid-from-element"));
+		validFrom.setGengou("平成");
+		var validUpto = new DateInput(dom.querySelector(".valid-upto-element"));
+		validUpto.setGengou("平成");
+		dom.querySelector('input[name=kourei][value="' + shahokokuho.kourei + '"]').checked = true;
+		dom.querySelector(".enter").addEventListener("click", function(){
+			var values = formValues(dom, validFrom, validUpto);
+			var validFromValue = validFrom.getSqlDate();
+			var validUptoValue = validUpto.getSqlDate();
+			var data = {};
+			var errors = [];
+			if( !values.hokensha_bangou.match(/^\d+$/ ) ){
+				errors.push("保険者番号の入力が適切でありません。");
+			} else {
+				data.hokensha_bangou = +values.hokensha_bangou;
+			}
+			if( values.hihokensha_kigou === "" && values.hihokensha_bangou === "" ){
+				errors.push("被保険者記号・番号が入力されていません。");
+			} else {
+				data.hihokensha_kigou = values.hihokensha_kigou;
+				data.hihokensha_bangou = values.hihokensha_bangou;
+			}
+			console.log(data);
+			console.log(errors);
+		});
+		dom.querySelector(".cancel").addEventListener("click", function(){
+			callbacks.onCancel();
+		});
+		return dom;
+	};
+
+	function formValues(dom, validFrom, validUpto){
+		return {
+			"hokensha_bangou": dom.querySelector("input[name='hokensha_bangou']").value,
+			"hihokensha_kigou": dom.querySelector("input[name='hihokensha_kigou']").value,
+			"hihokensha_bangou": dom.querySelector("input[name='hihokensha_bangou']").value,
+			"honnin": dom.querySelector("input[name='honnin']:checked").value,
+			"kourei": dom.querySelector("input[name='kourei']:checked").value
+		};
+	}
+
+
+
+/***/ },
+/* 146 */
+/***/ function(module, exports) {
+
+	module.exports = "<div>\r\n\t<div class=\"error\" style=\"display:none\"></div>\r\n    <form onsubmit=\"return false\" class=\"shahokokuho-form\">\r\n        <table>\r\n            <tr>\r\n                <td><label for=\"hokensha_bangou\">保険者番号</label></td>\r\n                <td><input name=\"hokensha_bangou\" value=\"{{hokensha_bangou}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"hihokensha_kigou\">被保険者記号</label></td>\r\n                <td><input name=\"hihokensha_kigou\" value=\"{{hihokensha_kigou}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"hihokensha_bangou\">被保険者番号</label></td>\r\n                <td><input name=\"hihokensha_bangou\" value=\"{{hihokensha_bangou}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"honnin\">本人・家族</label></td>\r\n                <td><input type=\"radio\" name=\"honnin\" value=\"1\" {{#honnin}}checked{{/honnin}}/>本人\r\n                    <input type=\"radio\" name=\"honnin\" value=\"0\" {{^honnin}}checked{{/honnin}}/>家族</td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_from\">有効期限（から）</label></td>\r\n                <td class=\"valid-from-element\">{{> date-input}}</td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_upto\">有効期限（まで）</label></td>\r\n                <td class=\"valid-upto-element\">{{> date-input}}</td>\r\n            </tr>\r\n            <tr valign=\"top\">\r\n                <td><label for=\"kourei\">高齢</label></td>\r\n                <td>\r\n                    <span style=\"white-space: nowrap\"><input type=\"radio\" name=\"kourei\" value=\"0\"/>高齢でない</span><br class=\"kourei-br\"/>\r\n                    <span style=\"white-space: nowrap\"><input type=\"radio\" name=\"kourei\" value=\"1\"/>１割</span>\r\n                    <span style=\"white-space: nowrap\"><input type=\"radio\" name=\"kourei\" value=\"2\"/>２割</span>\r\n                    <span style=\"white-space: nowrap\"><input type=\"radio\" name=\"kourei\" value=\"3\"/>３割</span>\r\n                </td>\r\n            </tr>\r\n        </table>\r\n\t    <div>\r\n\t        <button class=\"enter\">入力</button>\r\n\t        <button class=\"cancel\">キャンセル</button>\r\n\t    </div>\r\n    </form>\r\n</div>\r\n"
+
+/***/ },
+/* 147 */
+/***/ function(module, exports) {
+
+	module.exports = "<select name=\"gengou\">\r\n\t<option value=\"明治\">明治</option>\r\n\t<option value=\"大正\">大正</option>\r\n\t<option value=\"昭和\">昭和</option>\r\n\t<option value=\"平成\">平成</option>\r\n\t<option value=\"西暦\">西暦</option>\r\n</select>\r\n<input name=\"nen\" style=\"width:2em\"/>年\r\n<input name=\"month\" style=\"width:2em\"/>月\r\n<input name=\"day\" style=\"width:2em\"/>日\r\n"
+
+/***/ },
+/* 148 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var kanjidate = __webpack_require__(15);
+	var moment = __webpack_require__(16);
+
+	function DateInput(dom){
+		this.dom = dom;
+	}
+
+	DateInput.prototype.setGengou = function(gengou){
+		var dom = this.dom;
+		dom.querySelector("select[name=gengou] option[value=" + gengou + "]").selected = true;
+	};
+
+	DateInput.prototype.getGengou = function(){
+		return this.dom.querySelector("select[name='gengou'] option:checked").value;
+	};
+
+	DateInput.prototype.getNen = function(){
+		return this.dom.querySelector("input[name='nen']").value;
+	};
+
+	DateInput.prototype.getMonth = function(){
+		return this.dom.querySelector("input[name='month']").value;
+	};
+
+	DateInput.prototype.getDay = function(){
+		return this.dom.querySelector("input[name='day']").value;
+	};
+
+	DateInput.prototype.getValues = function(){
+		return {
+			gengou: this.getGengou(),
+			nen: this.getNen(),
+			month: this.getMonth(),
+			day: this.getDay()
+		}
+	}
+
+	DateInput.prototype.getSqlDate = function(){
+		var values = this.getValues();
+		this.errors = [];
+		if( values.nen === "" && values.month === "" && values.day === "" ){
+			return "0000-00-00";
+		}
+		var gengou = values.gengou;
+		var nen, month, day;
+		if( values.nen === "" ){
+			this.errors.push("年が入力されていません。");
+		} else if( !values.nen.match(/^\d+$/) ){
+			this.errors.push("年の入力が不適切です。");	
+		} else {
+			nen = +values.nen;
+		}
+		if( values.month === "" ){
+			this.errors.push("月が入力されていません。");
+		} else if( !values.month.match(/^\d+$/) ){
+			this.errors.push("月の入力が不適切です。");	
+		} else {
+			month = +values.month;
+		}
+		if( values.day === "" ){
+			this.errors.push("日が入力されていません。");
+		} else if( !values.day.match(/^\d+$/) ){
+			this.errors.push("日の入力が不適切です。");	
+		} else {
+			day = +values.day;
+		}
+		var year = kanjidate.fromGengou(gengou, nen);
+		var m = moment({year: year, month: month-1, day: day});
+		if( !m.isValid() ){
+			this.errors.push("日付が適切でありません。");
+		}
+		if( this.errors.length > 0 ){
+			return null;
+		}
+		return m.format("YYYY-MM-DD");
+	};
+
+	module.exports = DateInput;
+
 
 /***/ }
 /******/ ]);

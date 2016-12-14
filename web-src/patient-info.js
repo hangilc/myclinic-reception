@@ -9,6 +9,7 @@ var KoukikoureiDisp = require("./koukikourei-disp.js");
 var RoujinDisp = require("./roujin-disp.js");
 var KouhiDisp = require("./kouhi-disp.js");
 var CommandBox = require("./patient-info-command-box.js");
+var ShahokokuhoForm = require("./shahokokuho-form.js");
 
 exports.add = function(data){
 	var patient = data.patient;
@@ -44,7 +45,7 @@ exports.add = function(data){
 		});
 		var commandBox = CommandBox.create(patient.patient_id, {
 			onNewShahokokuho: function(){
-				console.log("new-shahokokuho");
+				newShahokokuho(patient, wrapper);
 			},
 			onNewKoukikourei: function(){
 				console.log("new-koukikourei");
@@ -55,7 +56,6 @@ exports.add = function(data){
 			},
 			onEditAllHoken: function(){
 				console.log("edit-all-hoken");
-
 			},
 			onStartVisit: function(){
 				console.log("start-visit");
@@ -68,3 +68,24 @@ exports.add = function(data){
 		dom.appendChild(commandBox);
 	});
 };
+
+function newShahokokuho(patient, wrapper){
+	var sub = Subpanel.create("新規社保・国保入力", function(dom){
+		var form = ShahokokuhoForm.create({
+			honnin: false,
+			kourei: 0	
+		}, {
+			onEntered: function(shahokokuho){
+				console.log(shahokokuho);
+				sub.parentNode.removeChild(sub);
+			},
+			onCancel: function(){
+				sub.parentNode.removeChild(sub);
+			}
+		});
+		dom.appendChild(form);
+	});
+	var commands = wrapper.querySelector("[data-role=patient-info-commands]");
+	commands.parentNode.insertBefore(sub, commands);
+}
+
