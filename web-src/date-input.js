@@ -66,7 +66,7 @@ DateInput.prototype.getSqlDate = function(){
 	}
 	var year = kanjidate.fromGengou(gengou, nen);
 	var m = moment({year: year, month: month-1, day: day});
-	if( !m.isValid() ){
+	if( values.nen !== "" && values.month !== "" && values.day !== "" && !m.isValid() ){
 		this.errors.push("日付が適切でありません。");
 	}
 	if( this.errors.length > 0 ){

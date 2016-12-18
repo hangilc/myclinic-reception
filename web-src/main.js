@@ -142,4 +142,14 @@ document.addEventListener("broadcast-shahokokuho-entered", function(event){
 	}
 });
 
+document.addEventListener("broadcast-koukikourei-entered", function(event){
+	var koukikourei = event.detail;
+	var e = new CustomEvent("koukikourei-entered", { detail: koukikourei });
+	var doms = document.querySelectorAll(".listening-to-koukikourei-entered");
+	for(var i=0;i<doms.length;i++){
+		var dom = doms[i];
+		dom.dispatchEvent(e);
+	}
+});
+
 

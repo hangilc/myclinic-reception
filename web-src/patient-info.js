@@ -107,6 +107,14 @@ function newKoukikourei(patient, wrapper){
 			}
 		};
 		var form = KoukikoureiForm.create(data, {
+			onEntered: function(koukikourei){
+				var e = new CustomEvent("broadcast-koukikourei-entered", {
+					bubbles: true,
+					detail: koukikourei
+				});
+				dom.dispatchEvent(e);
+				sub.parentNode.removeChild(sub);
+			},
 			onCancel: function(){
 				sub.parentNode.removeChild(sub);
 			}

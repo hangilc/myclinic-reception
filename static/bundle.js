@@ -188,6 +188,16 @@
 		}
 	});
 
+	document.addEventListener("broadcast-koukikourei-entered", function(event){
+		var koukikourei = event.detail;
+		var e = new CustomEvent("koukikourei-entered", { detail: koukikourei });
+		var doms = document.querySelectorAll(".listening-to-koukikourei-entered");
+		for(var i=0;i<doms.length;i++){
+			var dom = doms[i];
+			dom.dispatchEvent(e);
+		}
+	});
+
 
 
 
@@ -18126,6 +18136,14 @@
 				}
 			};
 			var form = KoukikoureiForm.create(data, {
+				onEntered: function(koukikourei){
+					var e = new CustomEvent("broadcast-koukikourei-entered", {
+						bubbles: true,
+						detail: koukikourei
+					});
+					dom.dispatchEvent(e);
+					sub.parentNode.removeChild(sub);
+				},
 				onCancel: function(){
 					sub.parentNode.removeChild(sub);
 				}
@@ -18662,7 +18680,7 @@
 		}
 		var year = kanjidate.fromGengou(gengou, nen);
 		var m = moment({year: year, month: month-1, day: day});
-		if( !m.isValid() ){
+		if( values.nen !== "" && values.month !== "" && values.day !== "" && !m.isValid() ){
 			this.errors.push("日付が適切でありません。");
 		}
 		if( this.errors.length > 0 ){
@@ -18739,6 +18757,8 @@
 	var dateInputTmplSrc = __webpack_require__(147);
 	var dateInputTmpl = hogan.compile(dateInputTmplSrc);
 	var DateInput = __webpack_require__(148);
+	var conti = __webpack_require__(10);
+	var service = __webpack_require__(7);
 
 	exports.create = function(data, callbacks){
 		var patient = data.patient;
@@ -18758,6 +18778,37 @@
 		validFromInput.setGengou("平成");
 		var validUptoInput = new DateInput(dom.querySelector(".valid-upto-element"));
 		validUptoInput.setGengou("平成");
+		dom.querySelector(".enter").addEventListener("click", function(event){
+			var errors = [];
+			var values = formValues(dom, errors);
+			if( errors.length > 0 ){
+				setError(dom, errors);
+				return;
+			}
+			values.patient_id = patient.patient_id;
+			var enteredKoukikourei;
+			conti.exec([
+				function(done){
+					service.enterKoukikourei(values, done);	
+				},
+				function(done){
+					service.getKoukikourei(values.koukikourei_id, function(err, result){
+						if( err ){
+							done(err);
+							return;
+						}
+						enteredKoukikourei = result;
+						done();
+					});
+				}
+			], function(err){
+				if( err ){
+					alert(err);
+					return;
+				}
+				callbacks.onEntered(enteredKoukikourei);
+			});
+		});
 		dom.querySelector(".cancel").addEventListener("click", function(event){
 			callbacks.onCancel();
 		});
@@ -18767,6 +18818,89 @@
 	function setFutanWari(dom, futanWari){
 		dom.querySelector('input[type="radio"][name="futan_wari"][value="' + futanWari + '"]').checked = true;
 	}
+
+	function hokenshaBangouValue(dom, errs){
+		var value = dom.querySelector("input[name='hokensha_bangou']").value;
+		if( value === "" ){
+			errs.push("保険者番号が入力されていません。");
+		} else if( value.match(/^\d+$/) ){
+			; // nop
+		} else {
+			errs.push("保険者番号の入力が不適切です。");
+		}
+		return value;
+	}
+
+	function hihokenshaBangouValue(dom, errs){
+		var value = dom.querySelector("input[name='hihokensha_bangou']").value;
+		if( value === "" ){
+			errs.push("被保険者番号が入力されていません。");
+		} else if( value.match(/^\d+$/) ){
+			; // nop
+		} else {
+			errs.push("被保険者番号の入力が不適切です。");
+		}
+		return value;
+	}
+
+	function futanWariValue(dom, errs){
+		var value = dom.querySelector("input[type='radio'][name='futan_wari']:checked").value;
+		if( value.match(/^\d+$/) ){
+			return +value;
+		} else {
+			errs.push("負担割の入力が不適切です。");
+			return value;
+		}
+	}
+
+	function validFromValue(dom, errs){
+		var dateInput = new DateInput(dom.querySelector(".valid-from-element"));
+		var value = dateInput.getSqlDate();
+		if( !value ){
+			var msg = "有効期限（から）の入力が不適切です。（";
+			msg += dateInput.errors.join("");
+			msg += "）";
+			errs.push(msg);
+		} else if( value === "0000-00-00" ){
+			errs.push("有効期限（から）が入力されていません。");
+			value = null;
+		}
+		return value;
+	}
+
+	function validUptoValue(dom, errs){
+		var dateInput = new DateInput(dom.querySelector(".valid-upto-element"));
+		var value = dateInput.getSqlDate();
+		if( !value ){
+			var msg = "有効期限（まで）の入力が不適切です。（";
+			msg += dateInput.errors.join("");
+			msg += "）";
+			errs.push(msg);
+		}
+		return value;
+	}
+
+	function formValues(dom, errs){
+		return {
+			hokensha_bangou: hokenshaBangouValue(dom, errs),
+			hihokensha_bangou: hihokenshaBangouValue(dom, errs),
+			futan_wari: futanWariValue(dom, errs),
+			valid_from: validFromValue(dom, errs),
+			valid_upto: validUptoValue(dom, errs),
+		};
+	}
+
+	function setError(dom, errs){
+		var box = dom.querySelector(".error");
+		errs.forEach(function(err){
+			var d = document.createElement("div");
+			var t = document.createTextNode(err);
+			d.appendChild(t);
+			box.appendChild(d);
+		});
+		box.style.display = "block";
+	}
+
 
 
 /***/ },
