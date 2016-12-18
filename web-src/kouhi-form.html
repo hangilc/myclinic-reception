@@ -1,4 +1,5 @@
-
+<div>
+	<div style="font-weight:bold">{{last_name}} {{first_name}}</div>
 	<div class="error" style="display:none"></div>
     <form onsubmit="return false;">
         <table>
@@ -12,11 +13,11 @@
             </tr>
             <tr>
                 <td><label for="valid_from">有効期限（から）</label></td>
-                <td class="valid-from-element"></td>
+                <td class="valid-from-element">{{> date-input}}</td>
             </tr>
             <tr>
                 <td><label for="valid_upto">有効期限（まで）</label></td>
-                <td class="valid-upto-element"></td>
+                <td class="valid-upto-element">{{> date-input}}</td>
             </tr>
         </table>
     </form>
@@ -24,3 +25,4 @@
         <button class="enter">入力</button>
         <button class="cancel">キャンセル</button>
     </div>
+</div>

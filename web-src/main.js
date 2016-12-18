@@ -152,4 +152,14 @@ document.addEventListener("broadcast-koukikourei-entered", function(event){
 	}
 });
 
+document.addEventListener("broadcast-kouhi-entered", function(event){
+	var kouhi = event.detail;
+	var e = new CustomEvent("kouhi-entered", { detail: kouhi });
+	var doms = document.querySelectorAll(".listening-to-kouhi-entered");
+	for(var i=0;i<doms.length;i++){
+		var dom = doms[i];
+		dom.dispatchEvent(e);
+	}
+});
+
 

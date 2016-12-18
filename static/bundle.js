@@ -198,6 +198,16 @@
 		}
 	});
 
+	document.addEventListener("broadcast-kouhi-entered", function(event){
+		var kouhi = event.detail;
+		var e = new CustomEvent("kouhi-entered", { detail: kouhi });
+		var doms = document.querySelectorAll(".listening-to-kouhi-entered");
+		for(var i=0;i<doms.length;i++){
+			var dom = doms[i];
+			dom.dispatchEvent(e);
+		}
+	});
+
 
 
 
@@ -18036,10 +18046,11 @@
 	var ShahokokuhoArea = __webpack_require__(150);
 	var KoukikoureiArea = __webpack_require__(152);
 	var RoujinDisp = __webpack_require__(139);
-	var KouhiDisp = __webpack_require__(141);
+	var KouhiArea = __webpack_require__(157);
 	var CommandBox = __webpack_require__(143);
 	var ShahokokuhoForm = __webpack_require__(145);
 	var KoukikoureiForm = __webpack_require__(153);
+	var KouhiForm = __webpack_require__(155);
 	var tmplSrc = __webpack_require__(149);
 
 	exports.add = function(data){
@@ -18070,12 +18081,10 @@
 				});
 				dom.querySelector(".roujin-wrapper").appendChild(sub);
 			}
-			hoken.kouhi_list.forEach(function(kouhi, index){
-				sub = Subpanel.create("公費(" + (index+1) + ")", function(subdom){
-					KouhiDisp.render(subdom, kouhi);
-				});
-				dom.querySelector(".kouhi-wrapper").appendChild(sub);
+			sub = Subpanel.create("公費", function(subdom){
+				KouhiArea.render(subdom, hoken.kouhi_list);
 			});
+			dom.querySelector(".kouhi-wrapper").appendChild(sub);
 			var commandBox = CommandBox.create(patient.patient_id, {
 				onNewShahokokuho: function(){
 					newShahokokuho(patient, wrapper);
@@ -18084,8 +18093,7 @@
 					newKoukikourei(patient, wrapper);
 				},
 				onNewKouhi: function(){
-					console.log("new-kouhi");
-
+					newKouhi(patient, wrapper);
 				},
 				onEditAllHoken: function(){
 					console.log("edit-all-hoken");
@@ -18140,6 +18148,33 @@
 					var e = new CustomEvent("broadcast-koukikourei-entered", {
 						bubbles: true,
 						detail: koukikourei
+					});
+					dom.dispatchEvent(e);
+					sub.parentNode.removeChild(sub);
+				},
+				onCancel: function(){
+					sub.parentNode.removeChild(sub);
+				}
+			});
+			dom.appendChild(form);
+		});
+		var commands = wrapper.querySelector("[data-role=patient-info-commands]");
+		commands.parentNode.insertBefore(sub, commands);
+	}
+
+	function newKouhi(patient, wrapper){
+		var sub = Subpanel.create("新規公費入力", function(dom){
+			var data = {
+				patient: patient,
+				kouhi: {
+					futan_wari: 1
+				}
+			};
+			var form = KouhiForm.create(data, {
+				onEntered: function(kouhi){
+					var e = new CustomEvent("broadcast-kouhi-entered", {
+						bubbles: true,
+						detail: kouhi
 					});
 					dom.dispatchEvent(e);
 					sub.parentNode.removeChild(sub);
@@ -18398,10 +18433,12 @@
 	var tmplSrc = __webpack_require__(142);
 	var tmpl = hogan.compile(tmplSrc);
 	var mUtil = __webpack_require__(134);
+	var rUtil = __webpack_require__(14);
 
-	exports.render = function(dom, kouhi){
+	exports.create = function(kouhi){
 		var rep = mUtil.kouhiRep(kouhi.futansha_bangou);
-		dom.innerHTML = tmpl.render({ label: rep });
+		var html = tmpl.render({ label: rep });
+		return rUtil.makeNode(html);
 	}
 
 
@@ -18409,7 +18446,7 @@
 /* 142 */
 /***/ function(module, exports) {
 
-	module.exports = "{{label}}\r\n"
+	module.exports = "<div>\r\n\t{{label}}\r\n</div>\r\n\r\n"
 
 /***/ },
 /* 143 */
@@ -18908,6 +18945,176 @@
 /***/ function(module, exports) {
 
 	module.exports = "<div>\r\n\t<div style=\"font-weight:bold\">{{last_name}} {{first_name}}</div>\r\n\t<div class=\"error\" style=\"display:none\"></div>\r\n    <form onsubmit=\"return false;\">\r\n        <table>\r\n            <tr>\r\n                <td><label for=\"hokensha_bangou\">保険者番号</label></td>\r\n                <td><input name=\"hokensha_bangou\" value=\"{{hokensha_bangou}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"hihokensha_bangou\">被保険者番号</label></td>\r\n                <td><input name=\"hihokensha_bangou\" value=\"{{hihokensha_bangou}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"futan_wari\">負担割合</label></td>\r\n                <td>\r\n                    <input type=\"radio\" name=\"futan_wari\" value=\"1\"/>1割\r\n                    <input type=\"radio\" name=\"futan_wari\" value=\"2\"/>2割\r\n                    <input type=\"radio\" name=\"futan_wari\" value=\"3\"/>3割\r\n                </td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_from\">有効期限（から）</label></td>\r\n                <td class=\"valid-from-element\">{{> date-input}}</td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_upto\">有効期限（まで）</label></td>\r\n                <td class=\"valid-upto-element\">{{> date-input}}</td>\r\n            </tr>\r\n        </table>\r\n    </form>\r\n    <div>\r\n        <button class=\"enter\">入力</button>\r\n        <button class=\"cancel\">キャンセル</button>\r\n    </div>\r\n</div>\r\n"
+
+/***/ },
+/* 155 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var hogan = __webpack_require__(2);
+	var tmplSrc = __webpack_require__(156);
+	var tmpl = hogan.compile(tmplSrc);
+	var rUtil = __webpack_require__(14);
+	var dateInputTmplSrc = __webpack_require__(147);
+	var dateInputTmpl = hogan.compile(dateInputTmplSrc);
+	var DateInput = __webpack_require__(148);
+	var conti = __webpack_require__(10);
+	var service = __webpack_require__(7);
+
+	exports.create = function(data, callbacks){
+		var patient = data.patient;
+		var hoken = data.kouhi;
+		var data = {
+			last_name: patient.last_name,
+			first_name: patient.first_name
+		};
+		Object.keys(hoken).forEach(function(key){
+			data[key] = hoken[key];
+		});
+		var dom = rUtil.makeNode(tmpl.render(data, {
+			"date-input": dateInputTmpl	
+		}));
+		var validFromInput = new DateInput(dom.querySelector(".valid-from-element"));
+		validFromInput.setGengou("平成");
+		var validUptoInput = new DateInput(dom.querySelector(".valid-upto-element"));
+		validUptoInput.setGengou("平成");
+		dom.querySelector(".enter").addEventListener("click", function(event){
+			var errors = [];
+			var values = formValues(dom, errors);
+			if( errors.length > 0 ){
+				setError(dom, errors);
+				return;
+			}
+			values.patient_id = patient.patient_id;
+			var enteredKouhi;
+			conti.exec([
+				function(done){
+					service.enterKouhi(values, done);	
+				},
+				function(done){
+					service.getKouhi(values.kouhi_id, function(err, result){
+						if( err ){
+							done(err);
+							return;
+						}
+						enteredKouhi = result;
+						done();
+					});
+				}
+			], function(err){
+				if( err ){
+					alert(err);
+					return;
+				}
+				callbacks.onEntered(enteredKouhi);
+			});
+		});
+		dom.querySelector(".cancel").addEventListener("click", function(event){
+			callbacks.onCancel();
+		});
+		return dom;
+	};
+
+	function futanshaValue(dom, errs){
+		var value = dom.querySelector("input[name='futansha']").value;
+		if( value === "" ){
+			errs.push("負担者番号が入力されていません。");
+		} else if( value.match(/^\d+$/) ){
+			value = +value;
+		} else {
+			errs.push("負担者番号の入力が不適切です。");
+		}
+		return value;
+	}
+
+	function jukyuushaValue(dom, errs){
+		var value = dom.querySelector("input[name='jukyuusha']").value;
+		if( value === "" ){
+			errs.push("受給者番号が入力されていません。");
+		} else if( value.match(/^\d+$/) ){
+			value = +value;
+		} else {
+			errs.push("受給者番号の入力が不適切です。");
+		}
+		return value;
+	}
+
+	function validFromValue(dom, errs){
+		var dateInput = new DateInput(dom.querySelector(".valid-from-element"));
+		var value = dateInput.getSqlDate();
+		if( !value ){
+			var msg = "有効期限（から）の入力が不適切です。（";
+			msg += dateInput.errors.join("");
+			msg += "）";
+			errs.push(msg);
+		} else if( value === "0000-00-00" ){
+			errs.push("有効期限（から）が入力されていません。");
+			value = null;
+		}
+		return value;
+	}
+
+	function validUptoValue(dom, errs){
+		var dateInput = new DateInput(dom.querySelector(".valid-upto-element"));
+		var value = dateInput.getSqlDate();
+		if( !value ){
+			var msg = "有効期限（まで）の入力が不適切です。（";
+			msg += dateInput.errors.join("");
+			msg += "）";
+			errs.push(msg);
+		}
+		return value;
+	}
+
+	function formValues(dom, errs){
+		return {
+			futansha: futanshaValue(dom, errs),
+			jukyuusha: jukyuushaValue(dom, errs),
+			valid_from: validFromValue(dom, errs),
+			valid_upto: validUptoValue(dom, errs),
+		};
+	}
+
+	function setError(dom, errs){
+		var box = dom.querySelector(".error");
+		errs.forEach(function(err){
+			var d = document.createElement("div");
+			var t = document.createTextNode(err);
+			d.appendChild(t);
+			box.appendChild(d);
+		});
+		box.style.display = "block";
+	}
+
+
+
+/***/ },
+/* 156 */
+/***/ function(module, exports) {
+
+	module.exports = "<div>\r\n\t<div style=\"font-weight:bold\">{{last_name}} {{first_name}}</div>\r\n\t<div class=\"error\" style=\"display:none\"></div>\r\n    <form onsubmit=\"return false;\">\r\n        <table>\r\n            <tr>\r\n                <td><label for=\"futansha\">負担者番号</label></td>\r\n                <td><input name=\"futansha\" value=\"{{futansha}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"jukyuusha\">受給者番号</label></td>\r\n                <td><input name=\"jukyuusha\" value=\"{{jukyuusha}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_from\">有効期限（から）</label></td>\r\n                <td class=\"valid-from-element\">{{> date-input}}</td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_upto\">有効期限（まで）</label></td>\r\n                <td class=\"valid-upto-element\">{{> date-input}}</td>\r\n            </tr>\r\n        </table>\r\n    </form>\r\n    <div>\r\n        <button class=\"enter\">入力</button>\r\n        <button class=\"cancel\">キャンセル</button>\r\n    </div>\r\n</div>\r\n"
+
+/***/ },
+/* 157 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var Disp = __webpack_require__(141);
+
+	exports.render = function(dom, hokenList){
+		hokenList.forEach(function(hoken){
+			var node = Disp.create(hoken);
+			dom.appendChild(node);
+		});
+
+		dom.classList.add("listening-to-kouhi-entered");
+
+		dom.addEventListener("kouhi-entered", function(event){
+			var hoken = event.detail;
+			var node = Disp.create(hoken);
+			dom.appendChild(node);
+		});
+	};
+
+
 
 /***/ }
 /******/ ]);

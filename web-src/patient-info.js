@@ -7,10 +7,11 @@ var mUtil = require("myclinic-util");
 var ShahokokuhoArea = require("./shahokokuho-area.js");
 var KoukikoureiArea = require("./koukikourei-area.js");
 var RoujinDisp = require("./roujin-disp.js");
-var KouhiDisp = require("./kouhi-disp.js");
+var KouhiArea = require("./kouhi-area.js");
 var CommandBox = require("./patient-info-command-box.js");
 var ShahokokuhoForm = require("./shahokokuho-form.js");
 var KoukikoureiForm = require("./koukikourei-form.js");
+var KouhiForm = require("./kouhi-form.js");
 var tmplSrc = require("raw!./patient-info.html");
 
 exports.add = function(data){
@@ -41,12 +42,10 @@ exports.add = function(data){
 			});
 			dom.querySelector(".roujin-wrapper").appendChild(sub);
 		}
-		hoken.kouhi_list.forEach(function(kouhi, index){
-			sub = Subpanel.create("公費(" + (index+1) + ")", function(subdom){
-				KouhiDisp.render(subdom, kouhi);
-			});
-			dom.querySelector(".kouhi-wrapper").appendChild(sub);
+		sub = Subpanel.create("公費", function(subdom){
+			KouhiArea.render(subdom, hoken.kouhi_list);
 		});
+		dom.querySelector(".kouhi-wrapper").appendChild(sub);
 		var commandBox = CommandBox.create(patient.patient_id, {
 			onNewShahokokuho: function(){
 				newShahokokuho(patient, wrapper);
@@ -55,8 +54,7 @@ exports.add = function(data){
 				newKoukikourei(patient, wrapper);
 			},
 			onNewKouhi: function(){
-				console.log("new-kouhi");
-
+				newKouhi(patient, wrapper);
 			},
 			onEditAllHoken: function(){
 				console.log("edit-all-hoken");
@@ -111,6 +109,33 @@ function newKoukikourei(patient, wrapper){
 				var e = new CustomEvent("broadcast-koukikourei-entered", {
 					bubbles: true,
 					detail: koukikourei
+				});
+				dom.dispatchEvent(e);
+				sub.parentNode.removeChild(sub);
+			},
+			onCancel: function(){
+				sub.parentNode.removeChild(sub);
+			}
+		});
+		dom.appendChild(form);
+	});
+	var commands = wrapper.querySelector("[data-role=patient-info-commands]");
+	commands.parentNode.insertBefore(sub, commands);
+}
+
+function newKouhi(patient, wrapper){
+	var sub = Subpanel.create("新規公費入力", function(dom){
+		var data = {
+			patient: patient,
+			kouhi: {
+				futan_wari: 1
+			}
+		};
+		var form = KouhiForm.create(data, {
+			onEntered: function(kouhi){
+				var e = new CustomEvent("broadcast-kouhi-entered", {
+					bubbles: true,
+					detail: kouhi
 				});
 				dom.dispatchEvent(e);
 				sub.parentNode.removeChild(sub);
