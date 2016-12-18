@@ -1,8 +1,8 @@
 var Disp = require("./shahokokuho-disp.js");
 
-exports.render = function(dom, shahokokuhoList){
+exports.render = function(dom, shahokokuhoList, patient){
 	shahokokuhoList.forEach(function(hoken){
-		var node = Disp.create(hoken);
+		var node = Disp.create(hoken, patient);
 		dom.appendChild(node);
 	});
 
@@ -10,7 +10,7 @@ exports.render = function(dom, shahokokuhoList){
 
 	dom.addEventListener("shahokokuho-entered", function(event){
 		var hoken = event.detail;
-		var node = Disp.create(hoken);
+		var node = Disp.create(hoken, patient);
 		dom.appendChild(node);
 	});
 };

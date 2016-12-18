@@ -10,6 +10,40 @@ DateInput.prototype.setGengou = function(gengou){
 	dom.querySelector("select[name=gengou] option[value=" + gengou + "]").selected = true;
 };
 
+DateInput.prototype.setNen = function(nen){
+	this.dom.querySelector("input[name='nen']").value = nen;
+	return this;
+};
+
+DateInput.prototype.setMonth = function(month){
+	this.dom.querySelector("input[name='month']").value = month;
+	return this;
+};
+
+DateInput.prototype.setDay = function(day){
+	this.dom.querySelector("input[name='day']").value = day;
+	return this;
+};
+
+DateInput.prototype.set = function(d){
+	if( d === "0000-00-00" || !d ){
+		this.setNen("");
+		this.setMonth("");
+		this.setDay("");
+		return this;	
+	}
+	var m = moment(d);
+	var year = m.year();
+	var month = m.month() + 1;
+	var day = m.date();
+	var g = kanjidate.toGengou(year, month, day);
+	this.setGengou(g.gengou);
+	this.setNen(g.nen);
+	this.setMonth(month);
+	this.setDay(day);
+	return this;
+};
+
 DateInput.prototype.getGengou = function(){
 	return this.dom.querySelector("select[name='gengou'] option:checked").value;
 };

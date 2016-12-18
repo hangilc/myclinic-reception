@@ -13,6 +13,8 @@ var ShahokokuhoForm = require("./shahokokuho-form.js");
 var KoukikoureiForm = require("./koukikourei-form.js");
 var KouhiForm = require("./kouhi-form.js");
 var tmplSrc = require("raw!./patient-info.html");
+var conti = require("conti");
+var service = require("myclinic-service-api");
 
 exports.add = function(data){
 	var patient = data.patient;
@@ -26,7 +28,7 @@ exports.add = function(data){
 		dom.querySelector(".basic-info-wrapper").appendChild(sub);
 		if( hoken.shahokokuho_list.length > 0 ){
 			sub = Subpanel.create("社保・国保", function(subdom){
-				ShahokokuhoArea.render(subdom, hoken.shahokokuho_list);
+				ShahokokuhoArea.render(subdom, hoken.shahokokuho_list, patient);
 			});
 			dom.querySelector(".shahokokuho-wrapper").appendChild(sub);
 		}
@@ -75,24 +77,52 @@ exports.add = function(data){
 
 function newShahokokuho(patient, wrapper){
 	var sub = Subpanel.create("新規社保・国保入力", function(dom){
-		var form = ShahokokuhoForm.create({
-			patient: patient,
-			shahokokuho: {
-				patient_id: patient.patient_id,
-				honnin: false,
-				kourei: 0	
-			}
-		}, {
-			onEntered: function(shahokokuho){
-				var e = new CustomEvent("broadcast-shahokokuho-entered", { bubbles: true, detail: shahokokuho });
-				wrapper.dispatchEvent(e);
-				sub.parentNode.removeChild(sub);
+		var form = new ShahokokuhoForm({
+			patient_id: patient.patient_id,
+			honnin: 0,
+			kourei: 0	
+		}, patient);
+		dom.appendChild(form.createDom({
+			onEnter: function(){
+				var errs = [];
+				var values = form.getValues(errs);
+				if( errs.length > 0 ){
+					form.setError(errs);
+					return;
+				}
+				values.patient_id = patient.patient_id;
+				var enteredShahokokuho;
+				conti.exec([
+					function(done){
+						service.enterShahokokuho(values, done);
+					},
+					function(done){
+						service.getShahokokuho(values.shahokokuho_id, function(err, result){
+							if( err ){
+								done(err);
+								return;
+							}
+							enteredShahokokuho = result;
+							done();
+						});
+					}
+				], function(err){
+					if( err ){
+						alert(err);
+						return;
+					}
+					var e = new CustomEvent("broadcast-shahokokuho-entered", { 
+						bubbles: true, 
+						detail: enteredShahokokuho
+					});
+					wrapper.dispatchEvent(e);
+					sub.parentNode.removeChild(sub);
+				});
 			},
 			onCancel: function(){
 				sub.parentNode.removeChild(sub);
 			}
-		});
-		dom.appendChild(form);
+		}));
 	});
 	var commands = wrapper.querySelector("[data-role=patient-info-commands]");
 	commands.parentNode.insertBefore(sub, commands);
