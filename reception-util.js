@@ -27,3 +27,16 @@ exports.sexAsKanji = function(sex){
 exports.todayAsSqlDate = function(){
 	return moment().format("YYYY-MM-DD");
 };
+
+exports.makeNode = function(html){
+	var dom = document.createElement("div");
+	dom.innerHTML = html;
+	return dom.firstChild;
+};
+
+exports.makeNodeList = function(html){
+	var dom = document.createElement("div");
+	dom.innerHTML = html;
+	return dom.childNodes;
+};
+

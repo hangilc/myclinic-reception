@@ -77,7 +77,6 @@ domStartVisitButton.addEventListener("click", function(){
 });
 
 document.body.addEventListener("new-visit", function(){
-	console.log("body new-visit");
 	updateWqueue();
 });
 
@@ -135,12 +134,10 @@ function fetchPatientInfo(patientId, at, cb){
 
 document.addEventListener("broadcast-shahokokuho-entered", function(event){
 	var shahokokuho = event.detail;
-	console.log("shahokokuho-entered", shahokokuho);
 	var e = new CustomEvent("shahokokuho-entered", { detail: shahokokuho });
 	var doms = document.querySelectorAll(".listening-to-shahokokuho-entered");
 	for(var i=0;i<doms.length;i++){
 		var dom = doms[i];
-		console.log(dom);
 		dom.dispatchEvent(e);
 	}
 });

@@ -123,7 +123,6 @@
 	});
 
 	document.body.addEventListener("new-visit", function(){
-		console.log("body new-visit");
 		updateWqueue();
 	});
 
@@ -181,12 +180,10 @@
 
 	document.addEventListener("broadcast-shahokokuho-entered", function(event){
 		var shahokokuho = event.detail;
-		console.log("shahokokuho-entered", shahokokuho);
 		var e = new CustomEvent("shahokokuho-entered", { detail: shahokokuho });
 		var doms = document.querySelectorAll(".listening-to-shahokokuho-entered");
 		for(var i=0;i<doms.length;i++){
 			var dom = doms[i];
-			console.log(dom);
 			dom.dispatchEvent(e);
 		}
 	});
@@ -2716,6 +2713,19 @@
 	exports.todayAsSqlDate = function(){
 		return moment().format("YYYY-MM-DD");
 	};
+
+	exports.makeNode = function(html){
+		var dom = document.createElement("div");
+		dom.innerHTML = html;
+		return dom.firstChild;
+	};
+
+	exports.makeNodeList = function(html){
+		var dom = document.createElement("div");
+		dom.innerHTML = html;
+		return dom.childNodes;
+	};
+
 
 
 /***/ },
@@ -18013,7 +18023,7 @@
 	var Util = __webpack_require__(14);
 	var BasicInfo = __webpack_require__(132);
 	var mUtil = __webpack_require__(134);
-	var ShahokokuhoDisp = __webpack_require__(135);
+	var ShahokokuhoArea = __webpack_require__(150);
 	var KoukikoureiDisp = __webpack_require__(137);
 	var RoujinDisp = __webpack_require__(139);
 	var KouhiDisp = __webpack_require__(141);
@@ -18025,7 +18035,6 @@
 		var patient = data.patient;
 		var hoken = data.hoken;
 		var sub;
-		console.log(hoken);
 		Panel.add("患者情報", function(dom, wrapper){
 			dom.innerHTML = tmplSrc;
 			sub = Subpanel.create("基本情報", function(subdom){
@@ -18034,7 +18043,7 @@
 			dom.querySelector(".basic-info-wrapper").appendChild(sub);
 			if( hoken.shahokokuho_list.length > 0 ){
 				sub = Subpanel.create("社保・国保", function(subdom){
-					ShahokokuhoDisp.render(subdom, hoken.shahokokuho_list[0]);
+					ShahokokuhoArea.render(subdom, hoken.shahokokuho_list);
 				});
 				dom.querySelector(".shahokokuho-wrapper").appendChild(sub);
 			}
@@ -18055,64 +18064,6 @@
 					KouhiDisp.render(subdom, kouhi);
 				});
 				dom.querySelector(".kouhi-wrapper").appendChild(sub);
-			});
-			var commandBox = CommandBox.create(patient.patient_id, {
-				onNewShahokokuho: function(){
-					newShahokokuho(patient, wrapper);
-				},
-				onNewKoukikourei: function(){
-					console.log("new-koukikourei");
-				},
-				onNewKouhi: function(){
-					console.log("new-kouhi");
-
-				},
-				onEditAllHoken: function(){
-					console.log("edit-all-hoken");
-				},
-				onStartVisit: function(){
-					console.log("start-visit");
-
-				},
-				onClose: function(){
-					wrapper.parentNode.removeChild(wrapper);	
-				}
-			});
-			dom.appendChild(commandBox);
-			return;
-
-			wrapper.classList.add("listening-to-shahokokuho-entered");
-			wrapper.addEventListener("shahokokuho-entered", function(event){
-				var shahokokuho = event.detail;
-				console.log("PATIENT-INFO shahokokuho-entered", shahokokuho);
-			});
-			var sub = Subpanel.create("基本情報", function(subdom){
-				BasicInfo.render(subdom, patient);
-			});
-			dom.appendChild(sub);
-			if( hoken.shahokokuho_list.length > 0 ){
-				sub = Subpanel.create("社保・国保", function(subdom){
-					ShahokokuhoDisp.render(subdom, hoken.shahokokuho_list[0]);
-				});
-				dom.appendChild(sub);
-			}
-			if( hoken.koukikourei_list.length > 0 ){
-				sub = Subpanel.create("後期高齢", function(subdom){
-					KoukikoureiDisp.render(subdom, hoken.koukikourei_list[0]);
-				});
-				dom.appendChild(sub);
-			}
-			if( hoken.roujin_list.length > 0 ){
-				sub = Subpanel.create("老人保険", function(subdom){
-					RoujinDisp.render(subdom, hoken.roujin_list[0]);
-				});
-				dom.appendChild(sub);
-			}
-			hoken.kouhi_list.forEach(function(kouhi, index){
-				sub = Subpanel.create("公費(" + (index+1) + ")", function(subdom){
-					KouhiDisp.render(subdom, kouhi);
-				});
-				dom.appendChild(sub);
 			});
 			var commandBox = CommandBox.create(patient.patient_id, {
 				onNewShahokokuho: function(){
@@ -18340,21 +18291,22 @@
 	var tmplSrc = __webpack_require__(136);
 	var tmpl = hogan.compile(tmplSrc);
 	var mUtil = __webpack_require__(134);
+	var rUtil = __webpack_require__(14);
 
-	exports.render = function(dom, shahokokuho){
+	exports.create = function(shahokokuho){
 		var rep = mUtil.shahokokuhoRep(shahokokuho.hokensha_bangou);
 		if( shahokokuho.kourei > 0 ){
 			rep += "・" + shahokokuho.kourei + "割";	
 		}
-		dom.innerHTML = tmpl.render({ label: rep });
-	}
+		return rUtil.makeNode(tmpl.render({ label: rep }));
+	};
 
 
 /***/ },
 /* 136 */
 /***/ function(module, exports) {
 
-	module.exports = "{{label}}\r\n\r\n"
+	module.exports = "<div>\r\n\t{{label}}\r\n</div>\r\n\r\n"
 
 /***/ },
 /* 137 */
@@ -18705,6 +18657,30 @@
 /***/ function(module, exports) {
 
 	module.exports = "<div class=\"basic-info-wrapper\"></div>\r\n<div class=\"shahokokuho-wrapper\"></div>\r\n<div class=\"koukikourei-wrapper\"></div>\r\n<div class=\"roujin-wrapper\"></div>\r\n<div class=\"kouhi-wrapper\"></div>\r\n<div class=\"command-wrapper\"></div>\r\n"
+
+/***/ },
+/* 150 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var Disp = __webpack_require__(135);
+
+	exports.render = function(dom, shahokokuhoList){
+		shahokokuhoList.forEach(function(hoken){
+			var node = Disp.create(hoken);
+			dom.appendChild(node);
+		});
+
+		dom.classList.add("listening-to-shahokokuho-entered");
+
+		dom.addEventListener("shahokokuho-entered", function(event){
+			var hoken = event.detail;
+			var node = Disp.create(hoken);
+			dom.appendChild(node);
+		});
+	};
+
+
+
 
 /***/ }
 /******/ ]);
