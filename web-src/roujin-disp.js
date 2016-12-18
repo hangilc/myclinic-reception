@@ -2,8 +2,10 @@ var hogan = require("hogan.js");
 var tmplSrc = require("raw!./roujin-disp.html");
 var tmpl = hogan.compile(tmplSrc);
 var mUtil = require("myclinic-util");
+var rUtil = require("../reception-util.js");
 
-exports.render = function(dom, roujin){
+exports.create = function(roujin){
 	var rep = mUtil.roujinRep(roujin.futan_wari);
-	dom.innerHTML = tmpl.render({ label: rep });
+	var html = tmpl.render({ label: rep });
+	return rUtil.makeNode(html);
 }

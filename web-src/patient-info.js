@@ -6,7 +6,7 @@ var BasicInfo = require("./patient-basic-info.js");
 var mUtil = require("myclinic-util");
 var ShahokokuhoArea = require("./shahokokuho-area.js");
 var KoukikoureiArea = require("./koukikourei-area.js");
-var RoujinDisp = require("./roujin-disp.js");
+var RoujinArea = require("./roujin-area.js");
 var KouhiArea = require("./kouhi-area.js");
 var CommandBox = require("./patient-info-command-box.js");
 var ShahokokuhoForm = require("./shahokokuho-form.js");
@@ -38,14 +38,16 @@ exports.add = function(data){
 		}
 		if( hoken.roujin_list.length > 0 ){
 			sub = Subpanel.create("老人保険", function(subdom){
-				RoujinDisp.render(subdom, hoken.roujin_list[0]);
+				RoujinArea.render(subdom, hoken.roujin_list);
 			});
 			dom.querySelector(".roujin-wrapper").appendChild(sub);
 		}
-		sub = Subpanel.create("公費", function(subdom){
-			KouhiArea.render(subdom, hoken.kouhi_list);
-		});
-		dom.querySelector(".kouhi-wrapper").appendChild(sub);
+		if( hoken.kouhi_list.length > 0) {
+			sub = Subpanel.create("公費", function(subdom){
+				KouhiArea.render(subdom, hoken.kouhi_list);
+			});
+			dom.querySelector(".kouhi-wrapper").appendChild(sub);
+		}
 		var commandBox = CommandBox.create(patient.patient_id, {
 			onNewShahokokuho: function(){
 				newShahokokuho(patient, wrapper);

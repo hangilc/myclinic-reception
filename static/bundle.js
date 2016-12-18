@@ -18045,7 +18045,7 @@
 	var mUtil = __webpack_require__(134);
 	var ShahokokuhoArea = __webpack_require__(150);
 	var KoukikoureiArea = __webpack_require__(152);
-	var RoujinDisp = __webpack_require__(139);
+	var RoujinArea = __webpack_require__(158);
 	var KouhiArea = __webpack_require__(157);
 	var CommandBox = __webpack_require__(143);
 	var ShahokokuhoForm = __webpack_require__(145);
@@ -18077,14 +18077,16 @@
 			}
 			if( hoken.roujin_list.length > 0 ){
 				sub = Subpanel.create("老人保険", function(subdom){
-					RoujinDisp.render(subdom, hoken.roujin_list[0]);
+					RoujinArea.render(subdom, hoken.roujin_list);
 				});
 				dom.querySelector(".roujin-wrapper").appendChild(sub);
 			}
-			sub = Subpanel.create("公費", function(subdom){
-				KouhiArea.render(subdom, hoken.kouhi_list);
-			});
-			dom.querySelector(".kouhi-wrapper").appendChild(sub);
+			if( hoken.kouhi_list.length > 0) {
+				sub = Subpanel.create("公費", function(subdom){
+					KouhiArea.render(subdom, hoken.kouhi_list);
+				});
+				dom.querySelector(".kouhi-wrapper").appendChild(sub);
+			}
 			var commandBox = CommandBox.create(patient.patient_id, {
 				onNewShahokokuho: function(){
 					newShahokokuho(patient, wrapper);
@@ -18412,10 +18414,12 @@
 	var tmplSrc = __webpack_require__(140);
 	var tmpl = hogan.compile(tmplSrc);
 	var mUtil = __webpack_require__(134);
+	var rUtil = __webpack_require__(14);
 
-	exports.render = function(dom, roujin){
+	exports.create = function(roujin){
 		var rep = mUtil.roujinRep(roujin.futan_wari);
-		dom.innerHTML = tmpl.render({ label: rep });
+		var html = tmpl.render({ label: rep });
+		return rUtil.makeNode(html);
 	}
 
 
@@ -18423,7 +18427,7 @@
 /* 140 */
 /***/ function(module, exports) {
 
-	module.exports = "{{label}}\r\n\r\n"
+	module.exports = "<div>\r\n\t{{label}}\r\n</div>\r\n\r\n\r\n"
 
 /***/ },
 /* 141 */
@@ -19108,6 +19112,29 @@
 		dom.classList.add("listening-to-kouhi-entered");
 
 		dom.addEventListener("kouhi-entered", function(event){
+			var hoken = event.detail;
+			var node = Disp.create(hoken);
+			dom.appendChild(node);
+		});
+	};
+
+
+
+/***/ },
+/* 158 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var Disp = __webpack_require__(139);
+
+	exports.render = function(dom, hokenList){
+		hokenList.forEach(function(hoken){
+			var node = Disp.create(hoken);
+			dom.appendChild(node);
+		});
+
+		dom.classList.add("listening-to-roujin-entered");
+
+		dom.addEventListener("roujin-entered", function(event){
 			var hoken = event.detail;
 			var node = Disp.create(hoken);
 			dom.appendChild(node);
