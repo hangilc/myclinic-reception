@@ -4,31 +4,69 @@ var tmpl = hogan.compile(tmplSrc);
 var mUtil = require("myclinic-util");
 var rUtil = require("../reception-util.js");
 var ShahokokuhoForm = require("./shahokokuho-form.js");
+var conti = require("conti");
+var service = require("myclinic-service-api");
 
 exports.create = function(shahokokuho, patient){
 	var rep = mUtil.shahokokuhoRep(shahokokuho.hokensha_bangou);
 	if( shahokokuho.kourei > 0 ){
-		rep += "・" + shahokokuho.kourei + "割";	
+		rep += "高齢・" + shahokokuho.kourei + "割";	
 	}
 	var dom = rUtil.makeNode(tmpl.render({ 
 		label: rep,
 	}));
+	bindEdit(dom, shahokokuho, patient);
+	return dom;
+};
+
+function bindEdit(dom, shahokokuho, patient){
 	dom.querySelector(".edit").addEventListener("click", function(){
-		var form = ShahokokuhoForm.create({
-			patient: patient,
-			shahokokuho: shahokokuho
-		}, {
+		var form = new ShahokokuhoForm(shahokokuho, patient);
+		var formDom = form.createDom({
+			onEnter: function(){
+				var errs = [];
+				var values = form.getValues(errs);
+				if( errs.length > 0 ){
+					form.setError(errs);
+					return;
+				}
+				values.shahokokuho_id = shahokokuho.shahokokuho_id;
+				values.patient_id = shahokokuho.patient_id;
+				var updatedShahokokuho;
+				conti.exec([
+					function(done){
+						service.updateShahokokuho(values, done);
+					},
+					function(done){
+						service.getShahokokuho(values.shahokokuho_id, function(err, result){
+							if( err ){
+								done(err);
+								return;
+							}
+							updatedShahokokuho = result;
+							done();
+						});
+					}
+				], function(err){
+					if( err ){
+						alert(err);
+						return;
+					}
+					var newDom = exports.create(updatedShahokokuho, patient);
+					formWrapper.parentNode.removeChild(formWrapper);
+					dom.parentNode.replaceChild(newDom, dom);
+				});
+			},
 			onCancel: function(){
-				domWrapper.parentNode.removeChild(domWrapper);
+				formWrapper.parentNode.removeChild(formWrapper);
 				dom.style.display = "block";
 			}
 		});
 		var formWrapper = document.createElement("div");
 		formWrapper.style.border = "1px solid #999";
 		formWrapper.style.padding = "4px";
-		formWrapper.appendChild(form);
+		formWrapper.appendChild(formDom);
 		dom.style.display = "none";
 		dom.parentNode.insertBefore(formWrapper, dom);
 	});
-	return dom;
-};
+}
