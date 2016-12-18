@@ -5,11 +5,12 @@ var Util = require("../reception-util.js");
 var BasicInfo = require("./patient-basic-info.js");
 var mUtil = require("myclinic-util");
 var ShahokokuhoArea = require("./shahokokuho-area.js");
-var KoukikoureiDisp = require("./koukikourei-disp.js");
+var KoukikoureiArea = require("./koukikourei-area.js");
 var RoujinDisp = require("./roujin-disp.js");
 var KouhiDisp = require("./kouhi-disp.js");
 var CommandBox = require("./patient-info-command-box.js");
 var ShahokokuhoForm = require("./shahokokuho-form.js");
+var KoukikoureiForm = require("./koukikourei-form.js");
 var tmplSrc = require("raw!./patient-info.html");
 
 exports.add = function(data){
@@ -30,7 +31,7 @@ exports.add = function(data){
 		}
 		if( hoken.koukikourei_list.length > 0 ){
 			sub = Subpanel.create("後期高齢", function(subdom){
-				KoukikoureiDisp.render(subdom, hoken.koukikourei_list[0]);
+				KoukikoureiArea.render(subdom, hoken.koukikourei_list);
 			});
 			dom.querySelector(".koukikourei-wrapper").appendChild(sub);
 		}
@@ -51,7 +52,7 @@ exports.add = function(data){
 				newShahokokuho(patient, wrapper);
 			},
 			onNewKoukikourei: function(){
-				console.log("new-koukikourei");
+				newKoukikourei(patient, wrapper);
 			},
 			onNewKouhi: function(){
 				console.log("new-kouhi");
@@ -87,6 +88,25 @@ function newShahokokuho(patient, wrapper){
 				wrapper.dispatchEvent(e);
 				sub.parentNode.removeChild(sub);
 			},
+			onCancel: function(){
+				sub.parentNode.removeChild(sub);
+			}
+		});
+		dom.appendChild(form);
+	});
+	var commands = wrapper.querySelector("[data-role=patient-info-commands]");
+	commands.parentNode.insertBefore(sub, commands);
+}
+
+function newKoukikourei(patient, wrapper){
+	var sub = Subpanel.create("新規後期高齢入力", function(dom){
+		var data = {
+			patient: patient,
+			koukikourei: {
+				futan_wari: 1
+			}
+		};
+		var form = KoukikoureiForm.create(data, {
 			onCancel: function(){
 				sub.parentNode.removeChild(sub);
 			}
