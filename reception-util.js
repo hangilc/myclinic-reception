@@ -28,6 +28,14 @@ exports.todayAsSqlDate = function(){
 	return moment().format("YYYY-MM-DD");
 };
 
+exports.validUptoAsKanji = function(d){
+	if( d === "0000-00-00" ){
+		return "（期限なし）";
+	} else {
+		return kanjidate.format(kanjidate.f2, d);
+	}
+};
+
 exports.makeNode = function(html){
 	var dom = document.createElement("div");
 	dom.innerHTML = html;

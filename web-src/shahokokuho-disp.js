@@ -6,6 +6,7 @@ var rUtil = require("../reception-util.js");
 var ShahokokuhoForm = require("./shahokokuho-form.js");
 var conti = require("conti");
 var service = require("myclinic-service-api");
+var Detail = require("./shahokokuho-detail.js");
 
 exports.create = function(shahokokuho, patient){
 	var rep = mUtil.shahokokuhoRep(shahokokuho.hokensha_bangou);
@@ -15,9 +16,30 @@ exports.create = function(shahokokuho, patient){
 	var dom = rUtil.makeNode(tmpl.render({ 
 		label: rep,
 	}));
-	bindEdit(dom, shahokokuho, patient);
+	bindDetail(dom, shahokokuho, patient);
 	return dom;
 };
+
+function bindDetail(dom, shahokokuho, patient){
+	dom.querySelector(".detail").addEventListener("click", function(){
+		var detail = Detail.create(shahokokuho, {
+			onClose: function(){
+				detail.parentNode.removeChild(detail);
+				dom.style.display = "block";	
+			},
+			onEdit: function(){
+
+			},
+			onDelete: function(){
+
+			}
+		});
+		detail.style.border = "1px solid #999";
+		detail.style.padding = "4px";
+		dom.style.display = "none";
+		dom.parentNode.insertBefore(detail, dom);
+	});
+}
 
 function bindEdit(dom, shahokokuho, patient){
 	dom.querySelector(".edit").addEventListener("click", function(){
