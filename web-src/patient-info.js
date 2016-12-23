@@ -142,7 +142,7 @@ function newKoukikourei(patient, wrapper){
 					bubbles: true,
 					detail: koukikourei
 				});
-				dom.dispatchEvent(e);
+				wrapper.dispatchEvent(e);
 				sub.parentNode.removeChild(sub);
 			},
 			onCancel: function(){
@@ -169,7 +169,7 @@ function newKouhi(patient, wrapper){
 					bubbles: true,
 					detail: kouhi
 				});
-				dom.dispatchEvent(e);
+				wrapper.dispatchEvent(e);
 				sub.parentNode.removeChild(sub);
 			},
 			onCancel: function(){

@@ -18189,7 +18189,7 @@
 						bubbles: true,
 						detail: koukikourei
 					});
-					dom.dispatchEvent(e);
+					wrapper.dispatchEvent(e);
 					sub.parentNode.removeChild(sub);
 				},
 				onCancel: function(){
@@ -18216,7 +18216,7 @@
 						bubbles: true,
 						detail: kouhi
 					});
-					dom.dispatchEvent(e);
+					wrapper.dispatchEvent(e);
 					sub.parentNode.removeChild(sub);
 				},
 				onCancel: function(){
