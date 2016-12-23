@@ -32,7 +32,17 @@ function bindDetail(dom, shahokokuho, patient){
 				doEdit(dom, shahokokuho, patient);
 			},
 			onDelete: function(){
-
+				if( !confirm("この社保・国保を削除しますか？") ){
+					return;
+				}
+				service.deleteShahokokuho(shahokokuho.shahokokuho_id, function(err, result){
+					if( err ){
+						alert(err);
+						return;
+					}
+					detail.parentNode.removeChild(detail);
+					dom.parentNode.removeChild(dom);
+				});
 			}
 		});
 		detail.style.border = "1px solid #999";

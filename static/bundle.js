@@ -18052,14 +18052,14 @@
 	var BasicInfo = __webpack_require__(132);
 	var mUtil = __webpack_require__(134);
 	var ShahokokuhoArea = __webpack_require__(135);
-	var KoukikoureiArea = __webpack_require__(142);
-	var RoujinArea = __webpack_require__(145);
-	var KouhiArea = __webpack_require__(148);
-	var CommandBox = __webpack_require__(151);
+	var KoukikoureiArea = __webpack_require__(144);
+	var RoujinArea = __webpack_require__(147);
+	var KouhiArea = __webpack_require__(150);
+	var CommandBox = __webpack_require__(153);
 	var ShahokokuhoForm = __webpack_require__(138);
-	var KoukikoureiForm = __webpack_require__(153);
-	var KouhiForm = __webpack_require__(155);
-	var tmplSrc = __webpack_require__(157);
+	var KoukikoureiForm = __webpack_require__(155);
+	var KouhiForm = __webpack_require__(157);
+	var tmplSrc = __webpack_require__(159);
 	var conti = __webpack_require__(10);
 	var service = __webpack_require__(7);
 
@@ -18432,7 +18432,7 @@
 	var ShahokokuhoForm = __webpack_require__(138);
 	var conti = __webpack_require__(10);
 	var service = __webpack_require__(7);
-	var Detail = __webpack_require__(158);
+	var Detail = __webpack_require__(142);
 
 	exports.create = function(shahokokuho, patient){
 		var rep = mUtil.shahokokuhoRep(shahokokuho.hokensha_bangou);
@@ -18458,7 +18458,17 @@
 					doEdit(dom, shahokokuho, patient);
 				},
 				onDelete: function(){
-
+					if( !confirm("この社保・国保を削除しますか？") ){
+						return;
+					}
+					service.deleteShahokokuho(shahokokuho.shahokokuho_id, function(err, result){
+						if( err ){
+							alert(err);
+							return;
+						}
+						detail.parentNode.removeChild(detail);
+						dom.parentNode.removeChild(dom);
+					});
 				}
 			});
 			detail.style.border = "1px solid #999";
@@ -18873,7 +18883,76 @@
 /* 142 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Disp = __webpack_require__(143);
+	var hogan = __webpack_require__(2);
+	var tmplSrc = __webpack_require__(143);
+	var tmpl = hogan.compile(tmplSrc);
+	var mUtil = __webpack_require__(134);
+	var kanjidate = __webpack_require__(15);
+	var rUtil = __webpack_require__(14);
+
+	exports.create = function(shahokokuho, callbacks){
+		var dom = document.createElement("div");
+		var data = {
+			rep: mUtil.shahokokuhoRep(shahokokuho.hokensha_bangou),
+			honnin_as_kanji: +shahokokuho.honnin === 0 ? "家族" : "本人",
+			valid_from_as_kanji: kanjidate.format(kanjidate.f2, shahokokuho.valid_from),
+			valid_upto_as_kanji: rUtil.validUptoAsKanji(shahokokuho.valid_upto),
+			kourei_as_kanji: koureiAsKanji(shahokokuho.kourei),
+		};
+		Object.keys(shahokokuho).forEach(function(key){
+			data[key] = shahokokuho[key];
+		});
+		data
+		var html = tmpl.render(data);
+		dom.innerHTML = tmpl.render(data);
+		bindClose(dom, callbacks.onClose);
+		bindEdit(dom, callbacks.onEdit);
+		bindDelete(dom, callbacks.onDelete);
+		return dom;
+	};
+
+	function koureiAsKanji(kourei){
+		kourei = +kourei;
+		if( kourei === 0 ){
+			return "（高齢でない）";
+		} else {
+			return "高齢" + kourei + "割";
+		}
+	}
+
+	function bindClose(dom, callback){
+		dom.querySelector(".close").addEventListener("click", function(){
+			callback();
+		});
+	}
+
+	function bindEdit(dom, callback){
+		dom.querySelector(".edit").addEventListener("click", function(){
+			callback();
+		});
+	}
+
+	function bindDelete(dom, callback){
+		dom.querySelector(".delete").addEventListener("click", function(){
+			callback();
+		});
+	}
+
+
+
+
+
+/***/ },
+/* 143 */
+/***/ function(module, exports) {
+
+	module.exports = "<div>\r\n    <table>\r\n    <tr>\r\n        <td>種類</td>\r\n        <td>{{rep}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>保険者番号</td>\r\n        <td>{{hokensha_bangou}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>被保険者記号</td>\r\n        <td>{{hihokensha_kigou}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>被保険者番号</td>\r\n        <td>{{hihokensha_bangou}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>本人・家族</td>\r\n        <td>{{honnin_as_kanji}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>有効期限（から）</td>\r\n        <td>{{valid_from_as_kanji}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>有効期限（まで）</td>\r\n        <td>{{valid_upto_as_kanji}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>高齢</td>\r\n        <td>{{kourei_as_kanji}}</td>\r\n    </tr>\r\n    </table>\r\n    <div class=\"cmd-wrapper\" style=\"text-align:right;margin-right:4px\">\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link close\">閉じる</a> |\r\n        <a href=\"javascript:void(0)\" class=\"cmd-link edit\">編集</a> |\r\n        <a href=\"javascript:void(0)\" class=\"cmd-link delete\">削除</a>\r\n    </div>\r\n</div>\r\n"
+
+/***/ },
+/* 144 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var Disp = __webpack_require__(145);
 
 	exports.render = function(dom, hokenList){
 		hokenList.forEach(function(hoken){
@@ -18893,11 +18972,11 @@
 
 
 /***/ },
-/* 143 */
+/* 145 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var hogan = __webpack_require__(2);
-	var tmplSrc = __webpack_require__(144);
+	var tmplSrc = __webpack_require__(146);
 	var tmpl = hogan.compile(tmplSrc);
 	var mUtil = __webpack_require__(134);
 	var rUtil = __webpack_require__(14);
@@ -18910,16 +18989,16 @@
 
 
 /***/ },
-/* 144 */
+/* 146 */
 /***/ function(module, exports) {
 
 	module.exports = "<div>\r\n\t{{label}}\r\n</div>\r\n\r\n\r\n"
 
 /***/ },
-/* 145 */
+/* 147 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Disp = __webpack_require__(146);
+	var Disp = __webpack_require__(148);
 
 	exports.render = function(dom, hokenList){
 		hokenList.forEach(function(hoken){
@@ -18939,11 +19018,11 @@
 
 
 /***/ },
-/* 146 */
+/* 148 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var hogan = __webpack_require__(2);
-	var tmplSrc = __webpack_require__(147);
+	var tmplSrc = __webpack_require__(149);
 	var tmpl = hogan.compile(tmplSrc);
 	var mUtil = __webpack_require__(134);
 	var rUtil = __webpack_require__(14);
@@ -18956,16 +19035,16 @@
 
 
 /***/ },
-/* 147 */
+/* 149 */
 /***/ function(module, exports) {
 
 	module.exports = "<div>\r\n\t{{label}}\r\n</div>\r\n\r\n\r\n"
 
 /***/ },
-/* 148 */
+/* 150 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Disp = __webpack_require__(149);
+	var Disp = __webpack_require__(151);
 
 	exports.render = function(dom, hokenList){
 		hokenList.forEach(function(hoken){
@@ -18985,11 +19064,11 @@
 
 
 /***/ },
-/* 149 */
+/* 151 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var hogan = __webpack_require__(2);
-	var tmplSrc = __webpack_require__(150);
+	var tmplSrc = __webpack_require__(152);
 	var tmpl = hogan.compile(tmplSrc);
 	var mUtil = __webpack_require__(134);
 	var rUtil = __webpack_require__(14);
@@ -19002,17 +19081,17 @@
 
 
 /***/ },
-/* 150 */
+/* 152 */
 /***/ function(module, exports) {
 
 	module.exports = "<div>\r\n\t{{label}}\r\n</div>\r\n\r\n"
 
 /***/ },
-/* 151 */
+/* 153 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var hogan = __webpack_require__(2);
-	var tmplSrc = __webpack_require__(152);
+	var tmplSrc = __webpack_require__(154);
 	var tmpl = hogan.compile(tmplSrc);
 
 	exports.create = function(patient, callbacks){
@@ -19053,17 +19132,17 @@
 
 
 /***/ },
-/* 152 */
+/* 154 */
 /***/ function(module, exports) {
 
 	module.exports = "<div>\r\n\t<hr style=\"border-top: 1px #999 solid\"/>\r\n\t<div style=\"margin:6px 4px\" data-role=\"patient-info-commands\">\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link new-shahokokuho\">社保・国保追加</a>\r\n\t\t|\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link new-koukikourei\">後期高齢追加</a>\r\n\t\t|\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link new-kouhi\">公費追加</a>\r\n\t\t|\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link edit-all-hoken\">全保険編集</a>\r\n\t</div>\r\n\t<div class=\"command-box\">\r\n\t\t<button class=\"start-visit\">診察受付</button>\r\n\t\t<button type=\"button\" class=\"close-panel\">閉じる</button>\r\n\t</div>\r\n</div>\r\n"
 
 /***/ },
-/* 153 */
+/* 155 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var hogan = __webpack_require__(2);
-	var tmplSrc = __webpack_require__(154);
+	var tmplSrc = __webpack_require__(156);
 	var tmpl = hogan.compile(tmplSrc);
 	var rUtil = __webpack_require__(14);
 	var dateInputTmplSrc = __webpack_require__(140);
@@ -19216,17 +19295,17 @@
 
 
 /***/ },
-/* 154 */
+/* 156 */
 /***/ function(module, exports) {
 
 	module.exports = "<div>\r\n\t<div style=\"font-weight:bold\">{{last_name}} {{first_name}}</div>\r\n\t<div class=\"error\" style=\"display:none\"></div>\r\n    <form onsubmit=\"return false;\">\r\n        <table>\r\n            <tr>\r\n                <td><label for=\"hokensha_bangou\">保険者番号</label></td>\r\n                <td><input name=\"hokensha_bangou\" value=\"{{hokensha_bangou}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"hihokensha_bangou\">被保険者番号</label></td>\r\n                <td><input name=\"hihokensha_bangou\" value=\"{{hihokensha_bangou}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"futan_wari\">負担割合</label></td>\r\n                <td>\r\n                    <input type=\"radio\" name=\"futan_wari\" value=\"1\"/>1割\r\n                    <input type=\"radio\" name=\"futan_wari\" value=\"2\"/>2割\r\n                    <input type=\"radio\" name=\"futan_wari\" value=\"3\"/>3割\r\n                </td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_from\">有効期限（から）</label></td>\r\n                <td class=\"valid-from-element\">{{> date-input}}</td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_upto\">有効期限（まで）</label></td>\r\n                <td class=\"valid-upto-element\">{{> date-input}}</td>\r\n            </tr>\r\n        </table>\r\n    </form>\r\n    <div>\r\n        <button class=\"enter\">入力</button>\r\n        <button class=\"cancel\">キャンセル</button>\r\n    </div>\r\n</div>\r\n"
 
 /***/ },
-/* 155 */
+/* 157 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var hogan = __webpack_require__(2);
-	var tmplSrc = __webpack_require__(156);
+	var tmplSrc = __webpack_require__(158);
 	var tmpl = hogan.compile(tmplSrc);
 	var rUtil = __webpack_require__(14);
 	var dateInputTmplSrc = __webpack_require__(140);
@@ -19363,85 +19442,16 @@
 
 
 /***/ },
-/* 156 */
+/* 158 */
 /***/ function(module, exports) {
 
 	module.exports = "<div>\r\n\t<div style=\"font-weight:bold\">{{last_name}} {{first_name}}</div>\r\n\t<div class=\"error\" style=\"display:none\"></div>\r\n    <form onsubmit=\"return false;\">\r\n        <table>\r\n            <tr>\r\n                <td><label for=\"futansha\">負担者番号</label></td>\r\n                <td><input name=\"futansha\" value=\"{{futansha}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"jukyuusha\">受給者番号</label></td>\r\n                <td><input name=\"jukyuusha\" value=\"{{jukyuusha}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_from\">有効期限（から）</label></td>\r\n                <td class=\"valid-from-element\">{{> date-input}}</td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_upto\">有効期限（まで）</label></td>\r\n                <td class=\"valid-upto-element\">{{> date-input}}</td>\r\n            </tr>\r\n        </table>\r\n    </form>\r\n    <div>\r\n        <button class=\"enter\">入力</button>\r\n        <button class=\"cancel\">キャンセル</button>\r\n    </div>\r\n</div>\r\n"
 
 /***/ },
-/* 157 */
-/***/ function(module, exports) {
-
-	module.exports = "<div class=\"basic-info-wrapper\"></div>\r\n<div class=\"shahokokuho-wrapper\"></div>\r\n<div class=\"koukikourei-wrapper\"></div>\r\n<div class=\"roujin-wrapper\"></div>\r\n<div class=\"kouhi-wrapper\"></div>\r\n<div class=\"command-wrapper\"></div>\r\n"
-
-/***/ },
-/* 158 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var hogan = __webpack_require__(2);
-	var tmplSrc = __webpack_require__(159);
-	var tmpl = hogan.compile(tmplSrc);
-	var mUtil = __webpack_require__(134);
-	var kanjidate = __webpack_require__(15);
-	var rUtil = __webpack_require__(14);
-
-	exports.create = function(shahokokuho, callbacks){
-		var dom = document.createElement("div");
-		var data = {
-			rep: mUtil.shahokokuhoRep(shahokokuho.hokensha_bangou),
-			honnin_as_kanji: +shahokokuho.honnin === 0 ? "家族" : "本人",
-			valid_from_as_kanji: kanjidate.format(kanjidate.f2, shahokokuho.valid_from),
-			valid_upto_as_kanji: rUtil.validUptoAsKanji(shahokokuho.valid_upto),
-			kourei_as_kanji: koureiAsKanji(shahokokuho.kourei),
-		};
-		Object.keys(shahokokuho).forEach(function(key){
-			data[key] = shahokokuho[key];
-		});
-		data
-		var html = tmpl.render(data);
-		dom.innerHTML = tmpl.render(data);
-		bindClose(dom, callbacks.onClose);
-		bindEdit(dom, callbacks.onEdit);
-		bindDelete(dom, callbacks.onDelete);
-		return dom;
-	};
-
-	function koureiAsKanji(kourei){
-		kourei = +kourei;
-		if( kourei === 0 ){
-			return "（高齢でない）";
-		} else {
-			return "高齢" + kourei + "割";
-		}
-	}
-
-	function bindClose(dom, callback){
-		dom.querySelector(".close").addEventListener("click", function(){
-			callback();
-		});
-	}
-
-	function bindEdit(dom, callback){
-		dom.querySelector(".edit").addEventListener("click", function(){
-			callback();
-		});
-	}
-
-	function bindDelete(dom, callback){
-		dom.querySelector(".delete").addEventListener("click", function(){
-			callback();
-		});
-	}
-
-
-
-
-
-/***/ },
 /* 159 */
 /***/ function(module, exports) {
 
-	module.exports = "<div>\r\n    <table>\r\n    <tr>\r\n        <td>種類</td>\r\n        <td>{{rep}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>保険者番号</td>\r\n        <td>{{hokensha_bangou}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>被保険者記号</td>\r\n        <td>{{hihokensha_kigou}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>被保険者番号</td>\r\n        <td>{{hihokensha_bangou}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>本人・家族</td>\r\n        <td>{{honnin_as_kanji}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>有効期限（から）</td>\r\n        <td>{{valid_from_as_kanji}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>有効期限（まで）</td>\r\n        <td>{{valid_upto_as_kanji}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>高齢</td>\r\n        <td>{{kourei_as_kanji}}</td>\r\n    </tr>\r\n    </table>\r\n    <div class=\"cmd-wrapper\" style=\"text-align:right;margin-right:4px\">\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link close\">閉じる</a> |\r\n        <a href=\"javascript:void(0)\" class=\"cmd-link edit\">編集</a> |\r\n        <a href=\"javascript:void(0)\" class=\"cmd-link delete\">削除</a>\r\n    </div>\r\n</div>\r\n"
+	module.exports = "<div class=\"basic-info-wrapper\"></div>\r\n<div class=\"shahokokuho-wrapper\"></div>\r\n<div class=\"koukikourei-wrapper\"></div>\r\n<div class=\"roujin-wrapper\"></div>\r\n<div class=\"kouhi-wrapper\"></div>\r\n<div class=\"command-wrapper\"></div>\r\n"
 
 /***/ }
 /******/ ]);
