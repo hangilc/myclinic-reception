@@ -2,6 +2,7 @@
 
 var Disp = require("./kouhi-disp.js");
 var Subpanel = require("./subpanel.js");
+var rUtil = require("../reception-util.js");
 
 exports.setup = function(wrapper, hoken_list, patient){
 	var sub = Subpanel.create("公費", function(subdom){
@@ -27,8 +28,17 @@ exports.setup = function(wrapper, hoken_list, patient){
 		subdom.classList.add("listening-to-kouhi-deleted");
 
 		subdom.addEventListener("kouhi-deleted", function(event){
-			if( event.detail.patient_id !== patient.patient_id ){
+			var kouhi = event.detail;
+			if( kouhi.patient_id !== patient.patient_id ){
 				return;
+			}
+			console.log(kouhi);
+			var relNodes = subdom.querySelectorAll("*[data-kouhi-id='" + kouhi.kouhi_id + "']");
+			console.log(relNodes);
+			var i, n;
+			n = relNodes.length;
+			for(i=0;i<n;i++){
+				rUtil.removeNode(relNodes.item(i));
 			}
 			var nodes = subdom.querySelectorAll(".kouhi-disp");
 			if( nodes.length === 0 ){

@@ -19395,6 +19395,7 @@
 
 	var Disp = __webpack_require__(151);
 	var Subpanel = __webpack_require__(130);
+	var rUtil = __webpack_require__(14);
 
 	exports.setup = function(wrapper, hoken_list, patient){
 		var sub = Subpanel.create("公費", function(subdom){
@@ -19420,8 +19421,17 @@
 			subdom.classList.add("listening-to-kouhi-deleted");
 
 			subdom.addEventListener("kouhi-deleted", function(event){
-				if( event.detail.patient_id !== patient.patient_id ){
+				var kouhi = event.detail;
+				if( kouhi.patient_id !== patient.patient_id ){
 					return;
+				}
+				console.log(kouhi);
+				var relNodes = subdom.querySelectorAll("*[data-kouhi-id='" + kouhi.kouhi_id + "']");
+				console.log(relNodes);
+				var i, n;
+				n = relNodes.length;
+				for(i=0;i<n;i++){
+					rUtil.removeNode(relNodes.item(i));
 				}
 				var nodes = subdom.querySelectorAll(".kouhi-disp");
 				if( nodes.length === 0 ){
@@ -19453,7 +19463,13 @@
 
 	exports.create = function(kouhi, patient){
 		var rep = mUtil.kouhiRep(kouhi.futansha);
-		var html = tmpl.render({ label: rep });
+		var data = {
+			label: rep
+		};
+		Object.keys(kouhi).forEach(function(key){
+			data[key] = kouhi[key];
+		});
+		var html = tmpl.render(data);
 		var dom = rUtil.makeNode(html);
 		bindDetail(dom, kouhi, patient);
 		return dom;
@@ -19511,19 +19527,17 @@
 						return;
 					}
 					var newDisp = exports.create(updatedKouhi, patient);
-					rUtil.removeNode(formWrapper);
+					rUtil.removeNode(form);
 					disp.parentNode.replaceChild(newDisp, disp);
 				});
 			},
 			onCancel: function(){
-				rUtil.removeNode(formWrapper);
+				rUtil.removeNode(form);
 				disp.style.display = "block";
 			}
 		});
-		var formWrapper = document.createElement("div");
-		formWrapper.classList.add("form-wrapper");
-		formWrapper.appendChild(form);
-		disp.parentNode.insertBefore(formWrapper, disp);
+		form.classList.add("form-wrapper");
+		disp.parentNode.insertBefore(form, disp);
 	}
 
 	function doDelete(disp, detail, kouhi){
@@ -19535,14 +19549,11 @@
 				alert(err);
 				return;
 			}
-			var parentNode = disp.parentNode;
-			rUtil.removeNode(detail);
-			rUtil.removeNode(disp);
 			var e = new CustomEvent("broadcast-kouhi-deleted", {
 				bubbles: true,
-				detail: {patient_id: kouhi.patient_id}
+				detail: kouhi
 			});
-			parentNode.dispatchEvent(e);
+			disp.dispatchEvent(e);
 		});
 	}
 
@@ -19551,7 +19562,7 @@
 /* 152 */
 /***/ function(module, exports) {
 
-	module.exports = "<div class=\"kouhi-disp\">\r\n\t{{label}}\r\n\t<a href=\"javascript:void(0)\" class=\"detail\">詳細</a>\r\n</div>\r\n\r\n"
+	module.exports = "<div class=\"kouhi-disp\" data-kouhi-id=\"{{kouhi_id}}\">\r\n\t{{label}}\r\n\t<a href=\"javascript:void(0)\" class=\"detail\">詳細</a>\r\n</div>\r\n\r\n"
 
 /***/ },
 /* 153 */
@@ -19886,7 +19897,7 @@
 /* 158 */
 /***/ function(module, exports) {
 
-	module.exports = "<div>\r\n\t<div style=\"font-weight:bold\">{{last_name}} {{first_name}}</div>\r\n\t<div class=\"error\" style=\"display:none\"></div>\r\n    <form onsubmit=\"return false;\">\r\n        <table>\r\n            <tr>\r\n                <td><label for=\"futansha\">負担者番号</label></td>\r\n                <td><input name=\"futansha\" value=\"{{futansha}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"jukyuusha\">受給者番号</label></td>\r\n                <td><input name=\"jukyuusha\" value=\"{{jukyuusha}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_from\">有効期限（から）</label></td>\r\n                <td class=\"valid-from-element\">{{> date-input}}</td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_upto\">有効期限（まで）</label></td>\r\n                <td class=\"valid-upto-element\">{{> date-input}}</td>\r\n            </tr>\r\n        </table>\r\n    </form>\r\n    <div>\r\n        <button class=\"enter\">入力</button>\r\n        <button class=\"cancel\">キャンセル</button>\r\n    </div>\r\n</div>\r\n"
+	module.exports = "<div data-kouhi-id=\"{{kouhi_id}}\">\r\n\t<div style=\"font-weight:bold\">{{last_name}} {{first_name}}</div>\r\n\t<div class=\"error\" style=\"display:none\"></div>\r\n    <form onsubmit=\"return false;\">\r\n        <table>\r\n            <tr>\r\n                <td><label for=\"futansha\">負担者番号</label></td>\r\n                <td><input name=\"futansha\" value=\"{{futansha}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"jukyuusha\">受給者番号</label></td>\r\n                <td><input name=\"jukyuusha\" value=\"{{jukyuusha}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_from\">有効期限（から）</label></td>\r\n                <td class=\"valid-from-element\">{{> date-input}}</td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_upto\">有効期限（まで）</label></td>\r\n                <td class=\"valid-upto-element\">{{> date-input}}</td>\r\n            </tr>\r\n        </table>\r\n    </form>\r\n    <div>\r\n        <button class=\"enter\">入力</button>\r\n        <button class=\"cancel\">キャンセル</button>\r\n    </div>\r\n</div>\r\n"
 
 /***/ },
 /* 159 */
@@ -20176,7 +20187,7 @@
 /* 167 */
 /***/ function(module, exports) {
 
-	module.exports = "<div>\r\n\t<table>\r\n\t<tr>\r\n\t    <td>種類</td>\r\n\t    <td>{{rep}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>負担者番号</td>\r\n\t    <td>{{futansha}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>受給者番号</td>\r\n\t    <td>{{jukyuusha}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（から）</td>\r\n\t    <td>{{valid_from_as_kanji}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（まで）</td>\r\n\t    <td>{{valid_upto_as_kanji}}</td>\r\n\t</tr>\r\n\t</table>\r\n\t<div class=\"cmd-wrapper\" style=\"text-align:right;margin-right:4px\">\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link close-kouhi\">閉じる</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link edit-kouhi\">編集</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link delete-kouhi\">削除</a>\r\n\t</div>\r\n</div>\r\n"
+	module.exports = "<div data-kouhi-id=\"{{kouhi_id}}\">\r\n\t<table>\r\n\t<tr>\r\n\t    <td>種類</td>\r\n\t    <td>{{rep}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>負担者番号</td>\r\n\t    <td>{{futansha}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>受給者番号</td>\r\n\t    <td>{{jukyuusha}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（から）</td>\r\n\t    <td>{{valid_from_as_kanji}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（まで）</td>\r\n\t    <td>{{valid_upto_as_kanji}}</td>\r\n\t</tr>\r\n\t</table>\r\n\t<div class=\"cmd-wrapper\" style=\"text-align:right;margin-right:4px\">\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link close-kouhi\">閉じる</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link edit-kouhi\">編集</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link delete-kouhi\">削除</a>\r\n\t</div>\r\n</div>\r\n"
 
 /***/ }
 /******/ ]);

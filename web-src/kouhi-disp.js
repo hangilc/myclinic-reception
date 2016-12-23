@@ -10,7 +10,13 @@ var conti = require("conti");
 
 exports.create = function(kouhi, patient){
 	var rep = mUtil.kouhiRep(kouhi.futansha);
-	var html = tmpl.render({ label: rep });
+	var data = {
+		label: rep
+	};
+	Object.keys(kouhi).forEach(function(key){
+		data[key] = kouhi[key];
+	});
+	var html = tmpl.render(data);
 	var dom = rUtil.makeNode(html);
 	bindDetail(dom, kouhi, patient);
 	return dom;
@@ -68,19 +74,17 @@ function doEdit(disp, kouhi, patient){
 					return;
 				}
 				var newDisp = exports.create(updatedKouhi, patient);
-				rUtil.removeNode(formWrapper);
+				rUtil.removeNode(form);
 				disp.parentNode.replaceChild(newDisp, disp);
 			});
 		},
 		onCancel: function(){
-			rUtil.removeNode(formWrapper);
+			rUtil.removeNode(form);
 			disp.style.display = "block";
 		}
 	});
-	var formWrapper = document.createElement("div");
-	formWrapper.classList.add("form-wrapper");
-	formWrapper.appendChild(form);
-	disp.parentNode.insertBefore(formWrapper, disp);
+	form.classList.add("form-wrapper");
+	disp.parentNode.insertBefore(form, disp);
 }
 
 function doDelete(disp, detail, kouhi){
@@ -92,13 +96,10 @@ function doDelete(disp, detail, kouhi){
 			alert(err);
 			return;
 		}
-		var parentNode = disp.parentNode;
-		rUtil.removeNode(detail);
-		rUtil.removeNode(disp);
 		var e = new CustomEvent("broadcast-kouhi-deleted", {
 			bubbles: true,
-			detail: {patient_id: kouhi.patient_id}
+			detail: kouhi
 		});
-		parentNode.dispatchEvent(e);
+		disp.dispatchEvent(e);
 	});
 }
