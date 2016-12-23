@@ -216,6 +216,11 @@
 		broadcast(".listening-to-koukikourei-deleted", e);
 	});
 
+	document.addEventListener("broadcast-roujin-deleted", function(event){
+		var e = new CustomEvent("roujin-deleted", { detail: event.detail });
+		broadcast(".listening-to-roujin-deleted", e);
+	});
+
 	document.addEventListener("broadcast-kouhi-entered", function(event){
 		var kouhi = event.detail;
 		var e = new CustomEvent("kouhi-entered", { detail: kouhi });
@@ -224,6 +229,11 @@
 			var dom = doms[i];
 			dom.dispatchEvent(e);
 		}
+	});
+
+	document.addEventListener("broadcast-kouhi-deleted", function(event){
+		var e = new CustomEvent("kouhi-deleted", { detail: event.detail });
+		broadcast(".listening-to-kouhi-deleted", e);
 	});
 
 
@@ -18102,12 +18112,7 @@
 			dom.querySelector(".basic-info-wrapper").appendChild(sub);
 			ShahokokuhoArea.setup(dom.querySelector(".shahokokuho-wrapper"), hoken.shahokokuho_list, patient);
 			KoukikoureiArea.setup(dom.querySelector(".koukikourei-wrapper"), hoken.koukikourei_list, patient);
-			if( hoken.roujin_list.length > 0 ){
-				sub = Subpanel.create("老人保険", function(subdom){
-					RoujinArea.render(subdom, hoken.roujin_list, patient);
-				});
-				dom.querySelector(".roujin-wrapper").appendChild(sub);
-			}
+			RoujinArea.setup(dom.querySelector(".roujin-wrapper"), hoken.roujin_list, patient);
 			if( hoken.kouhi_list.length > 0) {
 				sub = Subpanel.create("公費", function(subdom){
 					KouhiArea.render(subdom, hoken.kouhi_list, patient);
@@ -19036,52 +19041,56 @@
 /* 144 */
 /***/ function(module, exports, __webpack_require__) {
 
+	"use strict";
+
 	var Disp = __webpack_require__(145);
 	var Subpanel = __webpack_require__(130);
 
 	exports.setup = function(wrapper, hoken_list, patient){
-		sub = Subpanel.create("後期高齢", function(subdom){
+		var sub = Subpanel.create("後期高齢", function(subdom){
 			hoken_list.forEach(function(hoken){
 				var disp = Disp.create(hoken, patient);
 				subdom.appendChild(disp);
+			});
+
+			subdom.classList.add("listening-to-koukikourei-entered");
+
+			subdom.addEventListener("koukikourei-entered", function(event){
+				var hoken = event.detail;
+				if( hoken.patient_id !== patient.patient_id ){
+					return;
+				}
+				var node = Disp.create(hoken, patient);
+				subdom.appendChild(node);
+				if( sub.style.display === "none" ){
+					sub.style.display = "block";
+				}
+			});
+
+			subdom.classList.add("listening-to-koukikourei-deleted");
+
+			subdom.addEventListener("koukikourei-deleted", function(event){
+				if( event.detail.patient_id !== patient.patient_id ){
+					return;
+				}
+				var nodes = subdom.querySelectorAll(".koukikourei-disp");
+				if( nodes.length === 0 ){
+					sub.style.display = "none";
+				}
 			});
 		});
 		if( hoken_list.length === 0 ){
 			sub.style.display = "none";
 		}
 		wrapper.append(sub);
-
-		sub.classList.add("listening-to-koukikourei-entered");
-
-		sub.addEventListener("koukikourei-entered", function(event){
-			var hoken = event.detail;
-			if( hoken.patient_id !== patient.patient_id ){
-				return;
-			}
-			var node = Disp.create(hoken, patient);
-			sub.appendChild(node);
-			if( sub.style.display === "none" ){
-				sub.style.display = "block";
-			}
-		});
-
-		sub.classList.add("listening-to-koukikourei-deleted");
-
-		sub.addEventListener("koukikourei-deleted", function(event){
-			if( event.detail.patient_id !== patient.patient_id ){
-				return;
-			}
-			var nodes = sub.querySelectorAll(".koukikourei-disp");
-			if( nodes.length === 0 ){
-				sub.style.display = "none";
-			}
-		});
 	};
 
 
 /***/ },
 /* 145 */
 /***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
 
 	var hogan = __webpack_require__(2);
 	var tmplSrc = __webpack_require__(146);
@@ -19199,21 +19208,48 @@
 /* 147 */
 /***/ function(module, exports, __webpack_require__) {
 
+	"use strict";
+
 	var Disp = __webpack_require__(148);
+	var Subpanel = __webpack_require__(130);
 
-	exports.render = function(dom, hokenList, patient){
-		hokenList.forEach(function(hoken){
-			var node = Disp.create(hoken);
-			dom.appendChild(node);
+	exports.setup = function(wrapper, hoken_list, patient){
+		var sub = Subpanel.create("老人保険", function(subdom){
+			hoken_list.forEach(function(hoken){
+				var disp = Disp.create(hoken, patient);
+				subdom.appendChild(disp);
+			});
+
+			subdom.classList.add("listening-to-roujin-entered");
+
+			subdom.addEventListener("roujin-entered", function(event){
+				var hoken = event.detail;
+				if( hoken.patient_id !== patient.patient_id ){
+					return;
+				}
+				var node = Disp.create(hoken, patient);
+				subdom.appendChild(node);
+				if( sub.style.display === "none" ){
+					sub.style.display = "block";
+				}
+			});
+
+			subdom.classList.add("listening-to-roujin-deleted");
+
+			subdom.addEventListener("roujin-deleted", function(event){
+				if( event.detail.patient_id !== patient.patient_id ){
+					return;
+				}
+				var nodes = subdom.querySelectorAll(".roujin-disp");
+				if( nodes.length === 0 ){
+					sub.style.display = "none";
+				}
+			});
 		});
-
-		dom.classList.add("listening-to-roujin-entered");
-
-		dom.addEventListener("roujin-entered", function(event){
-			var hoken = event.detail;
-			var node = Disp.create(hoken);
-			dom.appendChild(node);
-		});
+		if( hoken_list.length === 0 ){
+			sub.style.display = "none";
+		}
+		wrapper.append(sub);
 	};
 
 
@@ -19227,11 +19263,104 @@
 	var tmpl = hogan.compile(tmplSrc);
 	var mUtil = __webpack_require__(134);
 	var rUtil = __webpack_require__(14);
+	var Detail = __webpack_require__(162);
+	var Form = __webpack_require__(163);
+	var service = __webpack_require__(7);
+	var conti = __webpack_require__(10);
 
-	exports.create = function(roujin){
-		var rep = mUtil.roujinRep(roujin.futan_wari);
+	exports.create = function(roujin, patient){
+		var rep = "老人（" + roujin.futan_wari + "割）";
 		var html = tmpl.render({ label: rep });
-		return rUtil.makeNode(html);
+		var dom = rUtil.makeNode(html);
+		bindDetail(dom, roujin, patient);
+		return dom;
+	}
+
+	function bindDetail(dom, roujin, patient){
+		dom.querySelector(".detail").addEventListener("click", function(){
+			var detail = Detail.create(roujin, patient, {
+				onClose: function(){
+					rUtil.removeNode(detail);
+					dom.style.display = "block";	
+				},
+				onEdit: function(){
+					rUtil.removeNode(detail);
+					doEdit(dom, roujin, patient);
+				},
+				onDelete: function(){
+					doDelete(dom, detail, roujin);
+				}
+			});
+			detail.style.border = "1px solid #999";
+			detail.style.padding = "4px";
+			dom.style.display = "none";
+			dom.parentNode.insertBefore(detail, dom);
+		});
+	}
+
+	function doEdit(disp, roujin, patient){
+		var data = {
+			roujin: roujin,
+			patient: patient
+		};
+		var form = Form.create(data, {
+			onEnter: function(values){
+				values.roujin_id = roujin.roujin_id;
+				values.patient_id = patient.patient_id;
+				var updatedRoujin;
+				conti.exec([
+					function(done){
+						service.updateRoujin(values, done);	
+					},
+					function(done){
+						service.getRoujin(values.roujin_id, function(err, result){
+							if( err ){
+								done(err);
+								return;
+							}
+							updatedRoujin = result;
+							done();
+						});
+					}
+				], function(err){
+					if( err ){
+						alert(err);
+						return;
+					}
+					var newDisp = exports.create(updatedRoujin, patient);
+					rUtil.removeNode(formWrapper);
+					disp.parentNode.replaceChild(newDisp, disp);
+				});
+			},
+			onCancel: function(){
+				rUtil.removeNode(formWrapper);
+				disp.style.display = "block";
+			}
+		});
+		var formWrapper = document.createElement("div");
+		formWrapper.classList.add("form-wrapper");
+		formWrapper.appendChild(form);
+		disp.parentNode.insertBefore(formWrapper, disp);
+	}
+
+	function doDelete(disp, detail, roujin){
+		if( !confirm("この老人保険を削除していいですか？") ){
+			return;
+		}
+		service.deleteRoujin(roujin.roujin_id, function(err){
+			if( err ){
+				alert(err);
+				return;
+			}
+			var parentNode = disp.parentNode;
+			rUtil.removeNode(detail);
+			rUtil.removeNode(disp);
+			var e = new CustomEvent("broadcast-roujin-deleted", {
+				bubbles: true,
+				detail: {patient_id: roujin.patient_id}
+			});
+			parentNode.dispatchEvent(e);
+		});
 	}
 
 
@@ -19239,7 +19368,7 @@
 /* 149 */
 /***/ function(module, exports) {
 
-	module.exports = "<div>\r\n\t{{label}}\r\n</div>\r\n\r\n\r\n"
+	module.exports = "<div class=\"roujin-disp\">\r\n\t{{label}}\r\n\t<a href=\"javascript:void(0)\" class=\"detail\">詳細</a>\r\n</div>\r\n\r\n\r\n"
 
 /***/ },
 /* 150 */
@@ -19472,6 +19601,7 @@
 
 	function setError(dom, errs){
 		var box = dom.querySelector(".error");
+		box.innerHTML = "";
 		errs.forEach(function(err){
 			var d = document.createElement("div");
 			var t = document.createTextNode(err);
@@ -19682,7 +19812,205 @@
 /* 161 */
 /***/ function(module, exports) {
 
-	module.exports = "<div>\r\n\t<table>\r\n\t<tr>\r\n\t\t<td>保険者番号</td>\r\n\t\t<td>{{hokensha_bangou}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t\t<td>被保険者番号</td>\r\n\t\t<td>{{hihokensha_bangou}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（から）</td>\r\n\t    <td>{{valid_from_as_kanji}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（まで）</td>\r\n\t    <td>{{valid_upto_as_kanji}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>負担割</td>\r\n\t    <td>{{futan_wari}}割</td>\r\n\t</tr>\r\n\t</table>\r\n\t<div class=\"cmd-wrapper\" style=\"text-align:right;margin-right:4px\">\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link close-koukikourei\">閉じる</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link edit-koukikourei\">編集</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link delete-koukikourei\">削除</a>\r\n\t</div>\r\n</div>\r\n"
+	module.exports = "<div>\r\n\t<table>\r\n\t<tr>\r\n\t\t<td>保険者番号</td>\r\n\t\t<td>{{hokensha_bangou}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t\t<td>被保険者番号</td>\r\n\t\t<td>{{hihokensha_bangou}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>負担割</td>\r\n\t    <td>{{futan_wari}}割</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（から）</td>\r\n\t    <td>{{valid_from_as_kanji}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（まで）</td>\r\n\t    <td>{{valid_upto_as_kanji}}</td>\r\n\t</tr>\r\n\t</table>\r\n\t<div class=\"cmd-wrapper\" style=\"text-align:right;margin-right:4px\">\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link close-koukikourei\">閉じる</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link edit-koukikourei\">編集</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link delete-koukikourei\">削除</a>\r\n\t</div>\r\n</div>\r\n"
+
+/***/ },
+/* 162 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	var hogan = __webpack_require__(2);
+	var tmplSrc = __webpack_require__(164);
+	var tmpl = hogan.compile(tmplSrc);
+	var rUtil = __webpack_require__(14);
+
+	exports.create = function(roujin, patient, callbacks){
+		var data = {
+			valid_from_as_kanji: rUtil.validFromAsKanji(roujin.valid_from),
+			valid_upto_as_kanji: rUtil.validUptoAsKanji(roujin.valid_upto)
+		};
+		Object.keys(roujin).forEach(function(key){
+			data[key] = roujin[key];
+		});
+		var html = tmpl.render(data);
+		var dom = rUtil.makeNode(html);
+		linkCallbacks(dom, callbacks);
+		return dom;
+	};
+
+	function linkCallbacks(dom, callbacks){
+		dom.querySelector(".close-roujin").addEventListener("click", function(){
+			callbacks.onClose();
+		});
+		dom.querySelector(".edit-roujin").addEventListener("click", function(){
+			callbacks.onEdit();
+		});
+		dom.querySelector(".delete-roujin").addEventListener("click", function(){
+			callbacks.onDelete();
+		});
+	}
+
+
+/***/ },
+/* 163 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	var hogan = __webpack_require__(2);
+	var tmplSrc = __webpack_require__(165);
+	var tmpl = hogan.compile(tmplSrc);
+	var rUtil = __webpack_require__(14);
+	var dateInputTmplSrc = __webpack_require__(140);
+	var dateInputTmpl = hogan.compile(dateInputTmplSrc);
+	var DateInput = __webpack_require__(141);
+	var conti = __webpack_require__(10);
+	var service = __webpack_require__(7);
+
+	exports.create = function(data, callbacks){
+		var patient = data.patient;
+		var hoken = data.roujin;
+		var data = {
+			last_name: patient.last_name,
+			first_name: patient.first_name
+		};
+		Object.keys(hoken).forEach(function(key){
+			data[key] = hoken[key];
+		});
+		var dom = rUtil.makeNode(tmpl.render(data, {
+			"date-input": dateInputTmpl	
+		}));
+		setFutanWari(dom, hoken.futan_wari);
+		var validFromInput = new DateInput(dom.querySelector(".valid-from-element"));
+		validFromInput.setGengou("平成");
+		if( hoken.valid_from ){
+			validFromInput.set(hoken.valid_from);
+		}
+		var validUptoInput = new DateInput(dom.querySelector(".valid-upto-element"));
+		validUptoInput.setGengou("平成");
+		if( hoken.valid_upto && hoken.valid_upto !== "0000-00-00" ){
+			validUptoInput.set(hoken.valid_upto);
+		}
+		bindEnter(dom, hoken, callbacks.onEnter);
+		dom.querySelector(".cancel").addEventListener("click", function(event){
+			callbacks.onCancel();
+		});
+		return dom;
+	};
+
+	function bindEnter(dom, hoken, onEnter){
+		dom.querySelector(".enter").addEventListener("click", function(event){
+			var errors = [];
+			var values = formValues(dom, errors);
+			if( errors.length > 0 ){
+				setError(dom, errors);
+				return;
+			}
+			onEnter(values);
+		});
+	}
+
+	function setFutanWari(dom, futanWari){
+		dom.querySelector('input[type="radio"][name="futan_wari"][value="' + futanWari + '"]').checked = true;
+	}
+
+	function shichousonBangouValue(dom, errs){
+		var value = dom.querySelector("input[name='shichouson']").value;
+		if( value === "" ){
+			errs.push("市町村番号が入力されていません。");
+		} else if( value.match(/^\d+$/) ){
+			; // nop
+		} else {
+			errs.push("市町村番号の入力が不適切です。");
+		}
+		return value;
+	}
+
+	function jukyuushaBangouValue(dom, errs){
+		var value = dom.querySelector("input[name='jukyuusha']").value;
+		if( value === "" ){
+			errs.push("受給者番号が入力されていません。");
+		} else if( value.match(/^\d+$/) ){
+			; // nop
+		} else {
+			errs.push("受給者番号の入力が不適切です。");
+		}
+		return value;
+	}
+
+	function futanWariValue(dom, errs){
+		var value = dom.querySelector("input[type='radio'][name='futan_wari']:checked").value;
+		if( value.match(/^\d+$/) ){
+			return +value;
+		} else {
+			errs.push("負担割の入力が不適切です。");
+			return value;
+		}
+	}
+
+	function validFromValue(dom, errs){
+		var dateInput = new DateInput(dom.querySelector(".valid-from-element"));
+		var value = dateInput.getSqlDate();
+		if( !value ){
+			var msg = "有効期限（から）の入力が不適切です。（";
+			msg += dateInput.errors.join("");
+			msg += "）";
+			errs.push(msg);
+		} else if( value === "0000-00-00" ){
+			errs.push("有効期限（から）が入力されていません。");
+			value = null;
+		}
+		return value;
+	}
+
+	function validUptoValue(dom, errs){
+		var dateInput = new DateInput(dom.querySelector(".valid-upto-element"));
+		var value = dateInput.getSqlDate();
+		if( !value ){
+			var msg = "有効期限（まで）の入力が不適切です。（";
+			msg += dateInput.errors.join("");
+			msg += "）";
+			errs.push(msg);
+		}
+		return value;
+	}
+
+	function formValues(dom, errs){
+		return {
+			shichouson: shichousonBangouValue(dom, errs),
+			jukyuusha: jukyuushaBangouValue(dom, errs),
+			futan_wari: futanWariValue(dom, errs),
+			valid_from: validFromValue(dom, errs),
+			valid_upto: validUptoValue(dom, errs),
+		};
+	}
+
+	function setError(dom, errs){
+		var box = dom.querySelector(".error");
+		box.innerHTML = "";
+		errs.forEach(function(err){
+			var d = document.createElement("div");
+			var t = document.createTextNode(err);
+			d.appendChild(t);
+			box.appendChild(d);
+		});
+		box.style.display = "block";
+	}
+
+
+
+/***/ },
+/* 164 */
+/***/ function(module, exports) {
+
+	module.exports = "<div>\r\n\t<table>\r\n\t<tr>\r\n\t\t<td>市町村番号</td>\r\n\t\t<td>{{shichouson}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t\t<td>受給者番号</td>\r\n\t\t<td>{{jukyuusha}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>負担割</td>\r\n\t    <td>{{futan_wari}}割</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（から）</td>\r\n\t    <td>{{valid_from_as_kanji}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（まで）</td>\r\n\t    <td>{{valid_upto_as_kanji}}</td>\r\n\t</tr>\r\n\t</table>\r\n\t<div class=\"cmd-wrapper\" style=\"text-align:right;margin-right:4px\">\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link close-roujin\">閉じる</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link edit-roujin\">編集</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link delete-roujin\">削除</a>\r\n\t</div>\r\n</div>\r\n"
+
+/***/ },
+/* 165 */
+/***/ function(module, exports) {
+
+	module.exports = "<div>\r\n\t<div style=\"font-weight:bold\">{{last_name}} {{first_name}}</div>\r\n\t<div class=\"error\" style=\"display:none\"></div>\r\n    <form onsubmit=\"return false;\">\r\n        <table>\r\n            <tr>\r\n                <td><label for=\"shichouson\">市町村番号</label></td>\r\n                <td><input name=\"shichouson\" value=\"{{shichouson}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"jukyuusha\">受給者番号</label></td>\r\n                <td><input name=\"jukyuusha\" value=\"{{jukyuusha}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"futan_wari\">負担割合</label></td>\r\n                <td>\r\n                    <input type=\"radio\" name=\"futan_wari\" value=\"1\"/>1割\r\n                    <input type=\"radio\" name=\"futan_wari\" value=\"2\"/>2割\r\n                    <input type=\"radio\" name=\"futan_wari\" value=\"3\"/>3割\r\n                </td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_from\">有効期限（から）</label></td>\r\n                <td class=\"valid-from-element\">{{> date-input}}</td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_upto\">有効期限（まで）</label></td>\r\n                <td class=\"valid-upto-element\">{{> date-input}}</td>\r\n            </tr>\r\n        </table>\r\n    </form>\r\n    <div>\r\n        <button class=\"enter\">入力</button>\r\n        <button class=\"cancel\">キャンセル</button>\r\n    </div>\r\n</div>\r\n"
 
 /***/ }
 /******/ ]);

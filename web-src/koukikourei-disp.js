@@ -1,3 +1,5 @@
+"use strict";
+
 var hogan = require("hogan.js");
 var tmplSrc = require("raw!./koukikourei-disp.html");
 var tmpl = hogan.compile(tmplSrc);

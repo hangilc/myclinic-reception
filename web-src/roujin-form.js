@@ -1,5 +1,7 @@
+"use strict";
+
 var hogan = require("hogan.js");
-var tmplSrc = require("raw!./koukikourei-form.html");
+var tmplSrc = require("raw!./roujin-form.html");
 var tmpl = hogan.compile(tmplSrc);
 var rUtil = require("../reception-util.js");
 var dateInputTmplSrc = require("raw!./date-input.html");
@@ -10,7 +12,7 @@ var service = require("myclinic-service-api");
 
 exports.create = function(data, callbacks){
 	var patient = data.patient;
-	var hoken = data.koukikourei;
+	var hoken = data.roujin;
 	var data = {
 		last_name: patient.last_name,
 		first_name: patient.first_name
@@ -55,26 +57,26 @@ function setFutanWari(dom, futanWari){
 	dom.querySelector('input[type="radio"][name="futan_wari"][value="' + futanWari + '"]').checked = true;
 }
 
-function hokenshaBangouValue(dom, errs){
-	var value = dom.querySelector("input[name='hokensha_bangou']").value;
+function shichousonBangouValue(dom, errs){
+	var value = dom.querySelector("input[name='shichouson']").value;
 	if( value === "" ){
-		errs.push("保険者番号が入力されていません。");
+		errs.push("市町村番号が入力されていません。");
 	} else if( value.match(/^\d+$/) ){
 		; // nop
 	} else {
-		errs.push("保険者番号の入力が不適切です。");
+		errs.push("市町村番号の入力が不適切です。");
 	}
 	return value;
 }
 
-function hihokenshaBangouValue(dom, errs){
-	var value = dom.querySelector("input[name='hihokensha_bangou']").value;
+function jukyuushaBangouValue(dom, errs){
+	var value = dom.querySelector("input[name='jukyuusha']").value;
 	if( value === "" ){
-		errs.push("被保険者番号が入力されていません。");
+		errs.push("受給者番号が入力されていません。");
 	} else if( value.match(/^\d+$/) ){
 		; // nop
 	} else {
-		errs.push("被保険者番号の入力が不適切です。");
+		errs.push("受給者番号の入力が不適切です。");
 	}
 	return value;
 }
@@ -118,8 +120,8 @@ function validUptoValue(dom, errs){
 
 function formValues(dom, errs){
 	return {
-		hokensha_bangou: hokenshaBangouValue(dom, errs),
-		hihokensha_bangou: hihokenshaBangouValue(dom, errs),
+		shichouson: shichousonBangouValue(dom, errs),
+		jukyuusha: jukyuushaBangouValue(dom, errs),
 		futan_wari: futanWariValue(dom, errs),
 		valid_from: validFromValue(dom, errs),
 		valid_upto: validUptoValue(dom, errs),

@@ -170,6 +170,11 @@ document.addEventListener("broadcast-koukikourei-deleted", function(event){
 	broadcast(".listening-to-koukikourei-deleted", e);
 });
 
+document.addEventListener("broadcast-roujin-deleted", function(event){
+	var e = new CustomEvent("roujin-deleted", { detail: event.detail });
+	broadcast(".listening-to-roujin-deleted", e);
+});
+
 document.addEventListener("broadcast-kouhi-entered", function(event){
 	var kouhi = event.detail;
 	var e = new CustomEvent("kouhi-entered", { detail: kouhi });
@@ -178,6 +183,11 @@ document.addEventListener("broadcast-kouhi-entered", function(event){
 		var dom = doms[i];
 		dom.dispatchEvent(e);
 	}
+});
+
+document.addEventListener("broadcast-kouhi-deleted", function(event){
+	var e = new CustomEvent("kouhi-deleted", { detail: event.detail });
+	broadcast(".listening-to-kouhi-deleted", e);
 });
 
 

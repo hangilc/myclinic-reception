@@ -1,0 +1,36 @@
+<div>
+	<div style="font-weight:bold">{{last_name}} {{first_name}}</div>
+	<div class="error" style="display:none"></div>
+    <form onsubmit="return false;">
+        <table>
+            <tr>
+                <td><label for="shichouson">市町村番号</label></td>
+                <td><input name="shichouson" value="{{shichouson}}"/></td>
+            </tr>
+            <tr>
+                <td><label for="jukyuusha">受給者番号</label></td>
+                <td><input name="jukyuusha" value="{{jukyuusha}}"/></td>
+            </tr>
+            <tr>
+                <td><label for="futan_wari">負担割合</label></td>
+                <td>
+                    <input type="radio" name="futan_wari" value="1"/>1割
+                    <input type="radio" name="futan_wari" value="2"/>2割
+                    <input type="radio" name="futan_wari" value="3"/>3割
+                </td>
+            </tr>
+            <tr>
+                <td><label for="valid_from">有効期限（から）</label></td>
+                <td class="valid-from-element">{{> date-input}}</td>
+            </tr>
+            <tr>
+                <td><label for="valid_upto">有効期限（まで）</label></td>
+                <td class="valid-upto-element">{{> date-input}}</td>
+            </tr>
+        </table>
+    </form>
+    <div>
+        <button class="enter">入力</button>
+        <button class="cancel">キャンセル</button>
+    </div>
+</div>

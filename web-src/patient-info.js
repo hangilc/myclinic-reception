@@ -29,12 +29,7 @@ exports.add = function(data){
 		dom.querySelector(".basic-info-wrapper").appendChild(sub);
 		ShahokokuhoArea.setup(dom.querySelector(".shahokokuho-wrapper"), hoken.shahokokuho_list, patient);
 		KoukikoureiArea.setup(dom.querySelector(".koukikourei-wrapper"), hoken.koukikourei_list, patient);
-		if( hoken.roujin_list.length > 0 ){
-			sub = Subpanel.create("老人保険", function(subdom){
-				RoujinArea.render(subdom, hoken.roujin_list, patient);
-			});
-			dom.querySelector(".roujin-wrapper").appendChild(sub);
-		}
+		RoujinArea.setup(dom.querySelector(".roujin-wrapper"), hoken.roujin_list, patient);
 		if( hoken.kouhi_list.length > 0) {
 			sub = Subpanel.create("公費", function(subdom){
 				KouhiArea.render(subdom, hoken.kouhi_list, patient);
