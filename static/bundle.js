@@ -18465,6 +18465,7 @@
 
 	var Disp = __webpack_require__(136);
 	var Subpanel = __webpack_require__(130);
+	var rUtil = __webpack_require__(14);
 
 	exports.render = function(dom, shahokokuhoList, patient){
 		shahokokuhoList.forEach(function(hoken){
@@ -18505,8 +18506,15 @@
 			subdom.classList.add("listening-to-shahokokuho-deleted");
 
 			subdom.addEventListener("shahokokuho-deleted", function(event){
-				if( event.detail.patient_id !== patient.patient_id ){
+				var shahokokuho = event.detail;
+				if( shahokokuho.patient_id !== patient.patient_id ){
 					return;
+				}
+				var relNodes = subdom.querySelectorAll("*[data-shahokokuho-id='" + shahokokuho.shahokokuho_id + "']");
+				var i, n;
+				n = relNodes.length;
+				for(i=0;i<n;i++){
+					rUtil.removeNode(relNodes.item(i));
 				}
 				var nodes = subdom.querySelectorAll(".shahokokuho-disp");
 				if( nodes.length === 0 ){
@@ -18540,9 +18548,13 @@
 		if( shahokokuho.kourei > 0 ){
 			rep += "（高齢・" + shahokokuho.kourei + "割）";	
 		}
-		var dom = rUtil.makeNode(tmpl.render({ 
-			label: rep,
-		}));
+		var data = {
+			label: rep
+		};
+		Object.keys(shahokokuho).forEach(function(key){
+			data[key] = shahokokuho[key];
+		});
+		var dom = rUtil.makeNode(tmpl.render(data));
 		bindDetail(dom, shahokokuho, patient);
 		return dom;
 	};
@@ -18567,19 +18579,15 @@
 							alert(err);
 							return;
 						}
-						var parentNode = dom.parentNode;
-						detail.parentNode.removeChild(detail);
-						dom.parentNode.removeChild(dom);
 						var e = new CustomEvent("broadcast-shahokokuho-deleted", {
 							bubbles: true,
-							detail: { patient_id: shahokokuho.patient_id }
+							detail: shahokokuho
 						});
-						parentNode.dispatchEvent(e);
+						dom.dispatchEvent(e);
 					});
 				}
 			});
-			detail.style.border = "1px solid #999";
-			detail.style.padding = "4px";
+			detail.classList.add("form-wrapper");
 			dom.style.display = "none";
 			dom.parentNode.insertBefore(detail, dom);
 		});
@@ -18619,72 +18627,18 @@
 						return;
 					}
 					var newDom = exports.create(updatedShahokokuho, patient);
-					formWrapper.parentNode.removeChild(formWrapper);
+					formDom.parentNode.removeChild(formDom);
 					dom.parentNode.replaceChild(newDom, dom);
 				});
 			},
 			onCancel: function(){
-				formWrapper.parentNode.removeChild(formWrapper);
+				formDom.parentNode.removeChild(formDom);
 				dom.style.display = "block";
 			}
 		});
-		var formWrapper = document.createElement("div");
-		formWrapper.classList.add("form-wrapper");
-		formWrapper.appendChild(formDom);
+		formDom.classList.add("form-wrapper");
 		dom.style.display = "none";
-		dom.parentNode.insertBefore(formWrapper, dom);
-	}
-
-	function bindEdit(dom, shahokokuho, patient){
-		dom.querySelector(".edit").addEventListener("click", function(){
-			var form = new ShahokokuhoForm(shahokokuho, patient);
-			var formDom = form.createDom({
-				onEnter: function(){
-					var errs = [];
-					var values = form.getValues(errs);
-					if( errs.length > 0 ){
-						form.setError(errs);
-						return;
-					}
-					values.shahokokuho_id = shahokokuho.shahokokuho_id;
-					values.patient_id = shahokokuho.patient_id;
-					var updatedShahokokuho;
-					conti.exec([
-						function(done){
-							service.updateShahokokuho(values, done);
-						},
-						function(done){
-							service.getShahokokuho(values.shahokokuho_id, function(err, result){
-								if( err ){
-									done(err);
-									return;
-								}
-								updatedShahokokuho = result;
-								done();
-							});
-						}
-					], function(err){
-						if( err ){
-							alert(err);
-							return;
-						}
-						var newDom = exports.create(updatedShahokokuho, patient);
-						formWrapper.parentNode.removeChild(formWrapper);
-						dom.parentNode.replaceChild(newDom, dom);
-					});
-				},
-				onCancel: function(){
-					formWrapper.parentNode.removeChild(formWrapper);
-					dom.style.display = "block";
-				}
-			});
-			var formWrapper = document.createElement("div");
-			formWrapper.style.border = "1px solid #999";
-			formWrapper.style.padding = "4px";
-			formWrapper.appendChild(formDom);
-			dom.style.display = "none";
-			dom.parentNode.insertBefore(formWrapper, dom);
-		});
+		dom.parentNode.insertBefore(formDom, dom);
 	}
 
 
@@ -18692,7 +18646,7 @@
 /* 137 */
 /***/ function(module, exports) {
 
-	module.exports = "<div class=\"shahokokuho-disp\">\r\n\t{{label}}\r\n\t<a href=\"javascript:void(0)\" class=\"detail\">詳細</a>\r\n</div>\r\n\r\n"
+	module.exports = "<div class=\"shahokokuho-disp\" data-shahokokuho-id=\"{{shahokokuho_id}}\">\r\n\t{{label}}\r\n\t<a href=\"javascript:void(0)\" class=\"detail\">詳細</a>\r\n</div>\r\n\r\n"
 
 /***/ },
 /* 138 */
@@ -18859,7 +18813,7 @@
 /* 139 */
 /***/ function(module, exports) {
 
-	module.exports = "<div>\r\n\t<div style=\"font-weight:bold\">{{last_name}} {{first_name}}</div>\r\n\t<div class=\"error\" style=\"display:none\"></div>\r\n    <form onsubmit=\"return false\" class=\"shahokokuho-form\">\r\n        <table>\r\n            <tr>\r\n                <td><label for=\"hokensha_bangou\">保険者番号</label></td>\r\n                <td><input name=\"hokensha_bangou\" value=\"{{hokensha_bangou}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"hihokensha_kigou\">被保険者記号</label></td>\r\n                <td><input name=\"hihokensha_kigou\" value=\"{{hihokensha_kigou}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"hihokensha_bangou\">被保険者番号</label></td>\r\n                <td><input name=\"hihokensha_bangou\" value=\"{{hihokensha_bangou}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"honnin\">本人・家族</label></td>\r\n                <td><input type=\"radio\" name=\"honnin\" value=\"1\" {{#honnin}}checked{{/honnin}}/>本人\r\n                    <input type=\"radio\" name=\"honnin\" value=\"0\" {{^honnin}}checked{{/honnin}}/>家族</td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_from\">有効期限（から）</label></td>\r\n                <td class=\"valid-from-element\">{{> date-input}}</td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_upto\">有効期限（まで）</label></td>\r\n                <td class=\"valid-upto-element\">{{> date-input}}</td>\r\n            </tr>\r\n            <tr valign=\"top\">\r\n                <td><label for=\"kourei\">高齢</label></td>\r\n                <td>\r\n                    <span style=\"white-space: nowrap\"><input type=\"radio\" name=\"kourei\" value=\"0\"/>高齢でない</span><br class=\"kourei-br\"/>\r\n                    <span style=\"white-space: nowrap\"><input type=\"radio\" name=\"kourei\" value=\"1\"/>１割</span>\r\n                    <span style=\"white-space: nowrap\"><input type=\"radio\" name=\"kourei\" value=\"2\"/>２割</span>\r\n                    <span style=\"white-space: nowrap\"><input type=\"radio\" name=\"kourei\" value=\"3\"/>３割</span>\r\n                </td>\r\n            </tr>\r\n        </table>\r\n\t    <div>\r\n\t        <button class=\"enter\">入力</button>\r\n\t        <button class=\"cancel\">キャンセル</button>\r\n\t    </div>\r\n    </form>\r\n</div>\r\n"
+	module.exports = "<div data-shahokokuho-id=\"{{shahokokuho_id}}\">\r\n\t<div style=\"font-weight:bold\">{{last_name}} {{first_name}}</div>\r\n\t<div class=\"error\" style=\"display:none\"></div>\r\n    <form onsubmit=\"return false\" class=\"shahokokuho-form\">\r\n        <table>\r\n            <tr>\r\n                <td><label for=\"hokensha_bangou\">保険者番号</label></td>\r\n                <td><input name=\"hokensha_bangou\" value=\"{{hokensha_bangou}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"hihokensha_kigou\">被保険者記号</label></td>\r\n                <td><input name=\"hihokensha_kigou\" value=\"{{hihokensha_kigou}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"hihokensha_bangou\">被保険者番号</label></td>\r\n                <td><input name=\"hihokensha_bangou\" value=\"{{hihokensha_bangou}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"honnin\">本人・家族</label></td>\r\n                <td><input type=\"radio\" name=\"honnin\" value=\"1\" {{#honnin}}checked{{/honnin}}/>本人\r\n                    <input type=\"radio\" name=\"honnin\" value=\"0\" {{^honnin}}checked{{/honnin}}/>家族</td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_from\">有効期限（から）</label></td>\r\n                <td class=\"valid-from-element\">{{> date-input}}</td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_upto\">有効期限（まで）</label></td>\r\n                <td class=\"valid-upto-element\">{{> date-input}}</td>\r\n            </tr>\r\n            <tr valign=\"top\">\r\n                <td><label for=\"kourei\">高齢</label></td>\r\n                <td>\r\n                    <span style=\"white-space: nowrap\"><input type=\"radio\" name=\"kourei\" value=\"0\"/>高齢でない</span><br class=\"kourei-br\"/>\r\n                    <span style=\"white-space: nowrap\"><input type=\"radio\" name=\"kourei\" value=\"1\"/>１割</span>\r\n                    <span style=\"white-space: nowrap\"><input type=\"radio\" name=\"kourei\" value=\"2\"/>２割</span>\r\n                    <span style=\"white-space: nowrap\"><input type=\"radio\" name=\"kourei\" value=\"3\"/>３割</span>\r\n                </td>\r\n            </tr>\r\n        </table>\r\n\t    <div>\r\n\t        <button class=\"enter\">入力</button>\r\n\t        <button class=\"cancel\">キャンセル</button>\r\n\t    </div>\r\n    </form>\r\n</div>\r\n"
 
 /***/ },
 /* 140 */
@@ -18997,7 +18951,6 @@
 	var rUtil = __webpack_require__(14);
 
 	exports.create = function(shahokokuho, callbacks){
-		var dom = document.createElement("div");
 		var data = {
 			rep: mUtil.shahokokuhoRep(shahokokuho.hokensha_bangou),
 			honnin_as_kanji: +shahokokuho.honnin === 0 ? "家族" : "本人",
@@ -19008,9 +18961,8 @@
 		Object.keys(shahokokuho).forEach(function(key){
 			data[key] = shahokokuho[key];
 		});
-		data
 		var html = tmpl.render(data);
-		dom.innerHTML = tmpl.render(data);
+		var dom = rUtil.makeNode(html);
 		bindClose(dom, callbacks.onClose);
 		bindEdit(dom, callbacks.onEdit);
 		bindDelete(dom, callbacks.onDelete);
@@ -19052,7 +19004,7 @@
 /* 143 */
 /***/ function(module, exports) {
 
-	module.exports = "<div>\r\n    <table>\r\n    <tr>\r\n        <td>種類</td>\r\n        <td>{{rep}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>保険者番号</td>\r\n        <td>{{hokensha_bangou}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>被保険者記号</td>\r\n        <td>{{hihokensha_kigou}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>被保険者番号</td>\r\n        <td>{{hihokensha_bangou}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>本人・家族</td>\r\n        <td>{{honnin_as_kanji}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>有効期限（から）</td>\r\n        <td>{{valid_from_as_kanji}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>有効期限（まで）</td>\r\n        <td>{{valid_upto_as_kanji}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>高齢</td>\r\n        <td>{{kourei_as_kanji}}</td>\r\n    </tr>\r\n    </table>\r\n    <div class=\"cmd-wrapper\" style=\"text-align:right;margin-right:4px\">\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link close\">閉じる</a> |\r\n        <a href=\"javascript:void(0)\" class=\"cmd-link edit\">編集</a> |\r\n        <a href=\"javascript:void(0)\" class=\"cmd-link delete\">削除</a>\r\n    </div>\r\n</div>\r\n"
+	module.exports = "<div data-shahokokuho-id=\"{{shahokokuho_id}}\">\r\n    <table>\r\n    <tr>\r\n        <td>種類</td>\r\n        <td>{{rep}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>保険者番号</td>\r\n        <td>{{hokensha_bangou}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>被保険者記号</td>\r\n        <td>{{hihokensha_kigou}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>被保険者番号</td>\r\n        <td>{{hihokensha_bangou}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>本人・家族</td>\r\n        <td>{{honnin_as_kanji}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>有効期限（から）</td>\r\n        <td>{{valid_from_as_kanji}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>有効期限（まで）</td>\r\n        <td>{{valid_upto_as_kanji}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>高齢</td>\r\n        <td>{{kourei_as_kanji}}</td>\r\n    </tr>\r\n    </table>\r\n    <div class=\"cmd-wrapper\" style=\"text-align:right;margin-right:4px\">\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link close\">閉じる</a> |\r\n        <a href=\"javascript:void(0)\" class=\"cmd-link edit\">編集</a> |\r\n        <a href=\"javascript:void(0)\" class=\"cmd-link delete\">削除</a>\r\n    </div>\r\n</div>\r\n"
 
 /***/ },
 /* 144 */

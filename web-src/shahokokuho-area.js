@@ -2,6 +2,7 @@
 
 var Disp = require("./shahokokuho-disp.js");
 var Subpanel = require("./subpanel.js");
+var rUtil = require("../reception-util.js");
 
 exports.render = function(dom, shahokokuhoList, patient){
 	shahokokuhoList.forEach(function(hoken){
@@ -42,8 +43,15 @@ exports.setup = function(wrapper, hoken_list, patient){
 		subdom.classList.add("listening-to-shahokokuho-deleted");
 
 		subdom.addEventListener("shahokokuho-deleted", function(event){
-			if( event.detail.patient_id !== patient.patient_id ){
+			var shahokokuho = event.detail;
+			if( shahokokuho.patient_id !== patient.patient_id ){
 				return;
+			}
+			var relNodes = subdom.querySelectorAll("*[data-shahokokuho-id='" + shahokokuho.shahokokuho_id + "']");
+			var i, n;
+			n = relNodes.length;
+			for(i=0;i<n;i++){
+				rUtil.removeNode(relNodes.item(i));
 			}
 			var nodes = subdom.querySelectorAll(".shahokokuho-disp");
 			if( nodes.length === 0 ){

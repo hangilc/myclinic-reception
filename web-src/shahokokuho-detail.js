@@ -6,7 +6,6 @@ var kanjidate = require("kanjidate");
 var rUtil = require("../reception-util.js");
 
 exports.create = function(shahokokuho, callbacks){
-	var dom = document.createElement("div");
 	var data = {
 		rep: mUtil.shahokokuhoRep(shahokokuho.hokensha_bangou),
 		honnin_as_kanji: +shahokokuho.honnin === 0 ? "家族" : "本人",
@@ -17,9 +16,8 @@ exports.create = function(shahokokuho, callbacks){
 	Object.keys(shahokokuho).forEach(function(key){
 		data[key] = shahokokuho[key];
 	});
-	data
 	var html = tmpl.render(data);
-	dom.innerHTML = tmpl.render(data);
+	var dom = rUtil.makeNode(html);
 	bindClose(dom, callbacks.onClose);
 	bindEdit(dom, callbacks.onEdit);
 	bindDelete(dom, callbacks.onDelete);
