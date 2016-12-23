@@ -132,6 +132,14 @@ function fetchPatientInfo(patientId, at, cb){
 	});
 }
 
+function broadcast(selector, event){
+	var doms = document.querySelectorAll(selector);
+	for(var i=0;i<doms.length;i++){
+		var dom = doms[i];
+		dom.dispatchEvent(event);
+	}
+}
+
 document.addEventListener("broadcast-shahokokuho-entered", function(event){
 	var shahokokuho = event.detail;
 	var e = new CustomEvent("shahokokuho-entered", { detail: shahokokuho });
@@ -150,6 +158,11 @@ document.addEventListener("broadcast-koukikourei-entered", function(event){
 		var dom = doms[i];
 		dom.dispatchEvent(e);
 	}
+});
+
+document.addEventListener("broadcast-koukikourei-deleted", function(event){
+	var e = new CustomEvent("koukikourei-deleted", { detail: event.detail });
+	broadcast(".listening-to-koukikourei-deleted", e);
 });
 
 document.addEventListener("broadcast-kouhi-entered", function(event){

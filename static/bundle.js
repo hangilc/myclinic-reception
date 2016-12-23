@@ -178,6 +178,14 @@
 		});
 	}
 
+	function broadcast(selector, event){
+		var doms = document.querySelectorAll(selector);
+		for(var i=0;i<doms.length;i++){
+			var dom = doms[i];
+			dom.dispatchEvent(event);
+		}
+	}
+
 	document.addEventListener("broadcast-shahokokuho-entered", function(event){
 		var shahokokuho = event.detail;
 		var e = new CustomEvent("shahokokuho-entered", { detail: shahokokuho });
@@ -196,6 +204,11 @@
 			var dom = doms[i];
 			dom.dispatchEvent(e);
 		}
+	});
+
+	document.addEventListener("broadcast-koukikourei-deleted", function(event){
+		var e = new CustomEvent("koukikourei-deleted", { detail: event.detail });
+		broadcast(".listening-to-koukikourei-deleted", e);
 	});
 
 	document.addEventListener("broadcast-kouhi-entered", function(event){
@@ -18087,12 +18100,7 @@
 				});
 				dom.querySelector(".shahokokuho-wrapper").appendChild(sub);
 			}
-			if( hoken.koukikourei_list.length > 0 ){
-				sub = Subpanel.create("後期高齢", function(subdom){
-					KoukikoureiArea.render(subdom, hoken.koukikourei_list, patient);
-				});
-				dom.querySelector(".koukikourei-wrapper").appendChild(sub);
-			}
+			KoukikoureiArea.setup(dom.querySelector(".koukikourei-wrapper"), hoken.koukikourei_list, patient);
 			if( hoken.roujin_list.length > 0 ){
 				sub = Subpanel.create("老人保険", function(subdom){
 					RoujinArea.render(subdom, hoken.roujin_list, patient);
@@ -18192,13 +18200,35 @@
 				}
 			};
 			var form = KoukikoureiForm.create(data, {
-				onEntered: function(koukikourei){
-					var e = new CustomEvent("broadcast-koukikourei-entered", {
-						bubbles: true,
-						detail: koukikourei
+				onEnter: function(values){
+					values.patient_id = patient.patient_id;
+					var enteredKoukikourei;
+					conti.exec([
+						function(done){
+							service.enterKoukikourei(values, done);	
+						},
+						function(done){
+							service.getKoukikourei(values.koukikourei_id, function(err, result){
+								if( err ){
+									done(err);
+									return;
+								}
+								enteredKoukikourei = result;
+								done();
+							});
+						}
+					], function(err){
+						if( err ){
+							alert(err);
+							return;
+						}
+						var e = new CustomEvent("broadcast-koukikourei-entered", {
+							bubbles: true,
+							detail: enteredKoukikourei
+						});
+						wrapper.dispatchEvent(e);
+						sub.parentNode.removeChild(sub);
 					});
-					wrapper.dispatchEvent(e);
-					sub.parentNode.removeChild(sub);
 				},
 				onCancel: function(){
 					sub.parentNode.removeChild(sub);
@@ -18530,8 +18560,7 @@
 			}
 		});
 		var formWrapper = document.createElement("div");
-		formWrapper.style.border = "1px solid #999";
-		formWrapper.style.padding = "4px";
+		formWrapper.classList.add("form-wrapper");
 		formWrapper.appendChild(formDom);
 		dom.style.display = "none";
 		dom.parentNode.insertBefore(formWrapper, dom);
@@ -18961,22 +18990,53 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var Disp = __webpack_require__(145);
+	var Subpanel = __webpack_require__(130);
 
 	exports.render = function(dom, hokenList, patient){
 		hokenList.forEach(function(hoken){
 			var node = Disp.create(hoken, patient);
 			dom.appendChild(node);
 		});
-
-		dom.classList.add("listening-to-koukikourei-entered");
-
-		dom.addEventListener("koukikourei-entered", function(event){
-			var hoken = event.detail;
-			var node = Disp.create(hoken);
-			dom.appendChild(node);
-		});
 	};
 
+	exports.setup = function(wrapper, hoken_list, patient){
+		sub = Subpanel.create("後期高齢", function(subdom){
+			hoken_list.forEach(function(hoken){
+				var disp = Disp.create(hoken, patient);
+				subdom.appendChild(disp);
+			});
+		});
+		if( hoken_list.length === 0 ){
+			sub.style.display = "none";
+		}
+		wrapper.append(sub);
+
+		sub.classList.add("listening-to-koukikourei-entered");
+
+		sub.addEventListener("koukikourei-entered", function(event){
+			var hoken = event.detail;
+			if( hoken.patient_id !== patient.patient_id ){
+				return;
+			}
+			var node = Disp.create(hoken);
+			sub.appendChild(node);
+			if( sub.style.display === "none" ){
+				sub.style.display = "block";
+			}
+		});
+
+		sub.classList.add("listening-to-koukikourei-deleted");
+
+		sub.addEventListener("koukikourei-deleted", function(event){
+			if( event.detail.patient_id !== patient.patient_id ){
+				return;
+			}
+			var nodes = sub.querySelectorAll(".koukikourei-disp");
+			if( nodes.length === 0 ){
+				sub.style.display = "none";
+			}
+		});
+	};
 
 
 /***/ },
@@ -18989,6 +19049,9 @@
 	var mUtil = __webpack_require__(134);
 	var rUtil = __webpack_require__(14);
 	var Detail = __webpack_require__(160);
+	var Form = __webpack_require__(155);
+	var service = __webpack_require__(7);
+	var conti = __webpack_require__(10);
 
 	exports.create = function(koukikourei, patient){
 		var rep = "後期高齢（" + koukikourei.futan_wari + "割）";
@@ -19006,12 +19069,11 @@
 					dom.style.display = "block";	
 				},
 				onEdit: function(){
-					console.log("ON-EDIT");	
-
+					rUtil.removeNode(detail);
+					doEdit(dom, koukikourei, patient);
 				},
 				onDelete: function(){
-					console.log("ON-DELETE");	
-
+					doDelete(dom, detail, koukikourei);
 				}
 			});
 			detail.style.border = "1px solid #999";
@@ -19021,12 +19083,77 @@
 		});
 	}
 
+	function doEdit(disp, koukikourei, patient){
+		var data = {
+			koukikourei: koukikourei,
+			patient: patient
+		};
+		var form = Form.create(data, {
+			onEnter: function(values){
+				values.koukikourei_id = koukikourei.koukikourei_id;
+				values.patient_id = patient.patient_id;
+				var updatedKoukikourei;
+				conti.exec([
+					function(done){
+						service.updateKoukikourei(values, done);	
+					},
+					function(done){
+						service.getKoukikourei(values.koukikourei_id, function(err, result){
+							if( err ){
+								done(err);
+								return;
+							}
+							updatedKoukikourei = result;
+							done();
+						});
+					}
+				], function(err){
+					if( err ){
+						alert(err);
+						return;
+					}
+					var newDisp = exports.create(updatedKoukikourei, patient);
+					rUtil.removeNode(formWrapper);
+					disp.parentNode.replaceChild(newDisp, disp);
+				});
+			},
+			onCancel: function(){
+				rUtil.removeNode(formWrapper);
+				disp.style.display = "block";
+			}
+		});
+		var formWrapper = document.createElement("div");
+		formWrapper.classList.add("form-wrapper");
+		formWrapper.appendChild(form);
+		disp.parentNode.insertBefore(formWrapper, disp);
+	}
+
+	function doDelete(disp, detail, koukikourei){
+		if( !confirm("この後期高齢を削除していいですか？") ){
+			return;
+		}
+		service.deleteKoukikourei(koukikourei.koukikourei_id, function(err){
+			if( err ){
+				alert(err);
+				return;
+			}
+			var parentNode = disp.parentNode;
+			rUtil.removeNode(detail);
+			rUtil.removeNode(disp);
+			var e = new CustomEvent("broadcast-koukikourei-deleted", {
+				bubbles: true,
+				detail: {patient_id: koukikourei.patient_id}
+			});
+			parentNode.dispatchEvent(e);
+		});
+	}
+
 
 /***/ },
 /* 146 */
 /***/ function(module, exports) {
 
-	module.exports = "<div>\r\n\t{{label}}\r\n\t<a href=\"javascript:void(0)\" class=\"detail\">詳細</a>\r\n</div>\r\n\r\n\r\n"
+	module.exports = "<div class=\"koukikourei-disp\">\r\n\t{{label}}\r\n\t<a href=\"javascript:void(0)\" class=\"detail\">詳細</a>\r\n</div>\r\n\r\n\r\n"
 
 /***/ },
 /* 147 */
@@ -19201,8 +19328,22 @@
 		setFutanWari(dom, hoken.futan_wari);
 		var validFromInput = new DateInput(dom.querySelector(".valid-from-element"));
 		validFromInput.setGengou("平成");
+		if( hoken.valid_from ){
+			validFromInput.set(hoken.valid_from);
+		}
 		var validUptoInput = new DateInput(dom.querySelector(".valid-upto-element"));
 		validUptoInput.setGengou("平成");
+		if( hoken.valid_upto && hoken.valid_upto !== "0000-00-00" ){
+			validUptoInput.set(hoken.valid_upto);
+		}
+		bindEnter(dom, hoken, callbacks.onEnter);
+		dom.querySelector(".cancel").addEventListener("click", function(event){
+			callbacks.onCancel();
+		});
+		return dom;
+	};
+
+	function bindEnter(dom, hoken, onEnter){
 		dom.querySelector(".enter").addEventListener("click", function(event){
 			var errors = [];
 			var values = formValues(dom, errors);
@@ -19210,35 +19351,9 @@
 				setError(dom, errors);
 				return;
 			}
-			values.patient_id = patient.patient_id;
-			var enteredKoukikourei;
-			conti.exec([
-				function(done){
-					service.enterKoukikourei(values, done);	
-				},
-				function(done){
-					service.getKoukikourei(values.koukikourei_id, function(err, result){
-						if( err ){
-							done(err);
-							return;
-						}
-						enteredKoukikourei = result;
-						done();
-					});
-				}
-			], function(err){
-				if( err ){
-					alert(err);
-					return;
-				}
-				callbacks.onEntered(enteredKoukikourei);
-			});
+			onEnter(values);
 		});
-		dom.querySelector(".cancel").addEventListener("click", function(event){
-			callbacks.onCancel();
-		});
-		return dom;
-	};
+	}
 
 	function setFutanWari(dom, futanWari){
 		dom.querySelector('input[type="radio"][name="futan_wari"][value="' + futanWari + '"]').checked = true;

@@ -31,3 +31,8 @@ table.info-table tr td:first-child { color:#666; }
 .command-box {
 	margin-top: 6px;
 }
+
+.form-wrapper {
+	border: 1px solid #999;
+	padding: 4px;
+}

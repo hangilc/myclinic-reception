@@ -96,8 +96,7 @@ function doEdit(dom, shahokokuho, patient){
 		}
 	});
 	var formWrapper = document.createElement("div");
-	formWrapper.style.border = "1px solid #999";
-	formWrapper.style.padding = "4px";
+	formWrapper.classList.add("form-wrapper");
 	formWrapper.appendChild(formDom);
 	dom.style.display = "none";
 	dom.parentNode.insertBefore(formWrapper, dom);

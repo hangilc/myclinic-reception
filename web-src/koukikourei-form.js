@@ -24,8 +24,22 @@ exports.create = function(data, callbacks){
 	setFutanWari(dom, hoken.futan_wari);
 	var validFromInput = new DateInput(dom.querySelector(".valid-from-element"));
 	validFromInput.setGengou("平成");
+	if( hoken.valid_from ){
+		validFromInput.set(hoken.valid_from);
+	}
 	var validUptoInput = new DateInput(dom.querySelector(".valid-upto-element"));
 	validUptoInput.setGengou("平成");
+	if( hoken.valid_upto && hoken.valid_upto !== "0000-00-00" ){
+		validUptoInput.set(hoken.valid_upto);
+	}
+	bindEnter(dom, hoken, callbacks.onEnter);
+	dom.querySelector(".cancel").addEventListener("click", function(event){
+		callbacks.onCancel();
+	});
+	return dom;
+};
+
+function bindEnter(dom, hoken, onEnter){
 	dom.querySelector(".enter").addEventListener("click", function(event){
 		var errors = [];
 		var values = formValues(dom, errors);
@@ -33,35 +47,9 @@ exports.create = function(data, callbacks){
 			setError(dom, errors);
 			return;
 		}
-		values.patient_id = patient.patient_id;
-		var enteredKoukikourei;
-		conti.exec([
-			function(done){
-				service.enterKoukikourei(values, done);	
-			},
-			function(done){
-				service.getKoukikourei(values.koukikourei_id, function(err, result){
-					if( err ){
-						done(err);
-						return;
-					}
-					enteredKoukikourei = result;
-					done();
-				});
-			}
-		], function(err){
-			if( err ){
-				alert(err);
-				return;
-			}
-			callbacks.onEntered(enteredKoukikourei);
-		});
+		onEnter(values);
 	});
-	dom.querySelector(".cancel").addEventListener("click", function(event){
-		callbacks.onCancel();
-	});
-	return dom;
-};
+}
 
 function setFutanWari(dom, futanWari){
 	dom.querySelector('input[type="radio"][name="futan_wari"][value="' + futanWari + '"]').checked = true;
