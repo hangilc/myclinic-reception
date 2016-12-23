@@ -12,7 +12,13 @@ var conti = require("conti");
 
 exports.create = function(koukikourei, patient){
 	var rep = "後期高齢（" + koukikourei.futan_wari + "割）";
-	var html = tmpl.render({ label: rep });
+	var data = {
+		label: rep
+	};
+	Object.keys(koukikourei).forEach(function(key){
+		data[key] = koukikourei[key];
+	});
+	var html = tmpl.render(data);
 	var dom = rUtil.makeNode(html);
 	bindDetail(dom, koukikourei, patient);
 	return dom;
@@ -33,8 +39,7 @@ function bindDetail(dom, koukikourei, patient){
 				doDelete(dom, detail, koukikourei);
 			}
 		});
-		detail.style.border = "1px solid #999";
-		detail.style.padding = "4px";
+		detail.classList.add("form-wrapper");
 		dom.style.display = "none";
 		dom.parentNode.insertBefore(detail, dom);
 	});
@@ -70,19 +75,17 @@ function doEdit(disp, koukikourei, patient){
 					return;
 				}
 				var newDisp = exports.create(updatedKoukikourei, patient);
-				rUtil.removeNode(formWrapper);
+				rUtil.removeNode(form);
 				disp.parentNode.replaceChild(newDisp, disp);
 			});
 		},
 		onCancel: function(){
-			rUtil.removeNode(formWrapper);
+			rUtil.removeNode(form);
 			disp.style.display = "block";
 		}
 	});
-	var formWrapper = document.createElement("div");
-	formWrapper.classList.add("form-wrapper");
-	formWrapper.appendChild(form);
-	disp.parentNode.insertBefore(formWrapper, disp);
+	form.classList.add("form-wrapper");
+	disp.parentNode.insertBefore(form, disp);
 }
 
 function doDelete(disp, detail, koukikourei){
@@ -94,13 +97,10 @@ function doDelete(disp, detail, koukikourei){
 			alert(err);
 			return;
 		}
-		var parentNode = disp.parentNode;
-		rUtil.removeNode(detail);
-		rUtil.removeNode(disp);
 		var e = new CustomEvent("broadcast-koukikourei-deleted", {
 			bubbles: true,
-			detail: {patient_id: koukikourei.patient_id}
+			detail: koukikourei
 		});
-		parentNode.dispatchEvent(e);
+		disp.dispatchEvent(e);
 	});
 }

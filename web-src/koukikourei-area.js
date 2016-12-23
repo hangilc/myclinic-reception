@@ -2,6 +2,7 @@
 
 var Disp = require("./koukikourei-disp.js");
 var Subpanel = require("./subpanel.js");
+var rUtil = require("../reception-util.js");
 
 exports.setup = function(wrapper, hoken_list, patient){
 	var sub = Subpanel.create("後期高齢", function(subdom){
@@ -27,8 +28,15 @@ exports.setup = function(wrapper, hoken_list, patient){
 		subdom.classList.add("listening-to-koukikourei-deleted");
 
 		subdom.addEventListener("koukikourei-deleted", function(event){
-			if( event.detail.patient_id !== patient.patient_id ){
+			var koukikourei = event.detail;
+			if( koukikourei.patient_id !== patient.patient_id ){
 				return;
+			}
+			var relNodes = subdom.querySelectorAll("*[data-koukikourei-id='" + koukikourei.koukikourei_id + "']");
+			var i, n;
+			n = relNodes.length;
+			for(i=0;i<n;i++){
+				rUtil.removeNode(relNodes.item(i));
 			}
 			var nodes = subdom.querySelectorAll(".koukikourei-disp");
 			if( nodes.length === 0 ){

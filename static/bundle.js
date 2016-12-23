@@ -18098,6 +18098,7 @@
 	var tmplSrc = __webpack_require__(159);
 	var conti = __webpack_require__(10);
 	var service = __webpack_require__(7);
+	var rUtil = __webpack_require__(14);
 
 	exports.add = function(data){
 		var patient = data.patient;
@@ -18141,19 +18142,14 @@
 
 	function newShahokokuho(patient, wrapper){
 		var sub = Subpanel.create("新規社保・国保入力", function(dom){
-			var form = new ShahokokuhoForm({
-				patient_id: patient.patient_id,
-				honnin: 0,
-				kourei: 0	
-			}, patient);
-			dom.appendChild(form.createDom({
-				onEnter: function(){
-					var errs = [];
-					var values = form.getValues(errs);
-					if( errs.length > 0 ){
-						form.setError(errs);
-						return;
-					}
+			var form = ShahokokuhoForm.create({
+				patient: patient,
+				shahokokuho: {
+					honnin: 0,
+					kourei: 0
+				}
+			}, {
+				onEnter: function(values){
 					values.patient_id = patient.patient_id;
 					var enteredShahokokuho;
 					conti.exec([
@@ -18180,13 +18176,14 @@
 							detail: enteredShahokokuho
 						});
 						wrapper.dispatchEvent(e);
-						sub.parentNode.removeChild(sub);
+						rUtil.removeNode(sub);
 					});
 				},
 				onCancel: function(){
-					sub.parentNode.removeChild(sub);
+					rUtil.removeNode(sub);
 				}
-			}));
+			});
+			dom.appendChild(form);
 		});
 		var commands = wrapper.querySelector("[data-role=patient-info-commands]");
 		commands.parentNode.insertBefore(sub, commands);
@@ -18595,15 +18592,11 @@
 
 	function doEdit(dom, shahokokuho, patient){
 		dom.style.display = "none";
-		var form = new ShahokokuhoForm(shahokokuho, patient);
-		var formDom = form.createDom({
-			onEnter: function(){
-				var errs = [];
-				var values = form.getValues(errs);
-				if( errs.length > 0 ){
-					form.setError(errs);
-					return;
-				}
+		var form = ShahokokuhoForm.create({
+			shahokokuho: shahokokuho,
+			patient: patient
+		}, {
+			onEnter: function(values){
 				values.shahokokuho_id = shahokokuho.shahokokuho_id;
 				values.patient_id = shahokokuho.patient_id;
 				var updatedShahokokuho;
@@ -18627,18 +18620,18 @@
 						return;
 					}
 					var newDom = exports.create(updatedShahokokuho, patient);
-					formDom.parentNode.removeChild(formDom);
+					rUtil.removeNode(form);
 					dom.parentNode.replaceChild(newDom, dom);
 				});
 			},
 			onCancel: function(){
-				formDom.parentNode.removeChild(formDom);
+				rUtil.removeNode(form);
 				dom.style.display = "block";
 			}
 		});
-		formDom.classList.add("form-wrapper");
+		form.classList.add("form-wrapper");
 		dom.style.display = "none";
-		dom.parentNode.insertBefore(formDom, dom);
+		dom.parentNode.insertBefore(form, dom);
 	}
 
 
@@ -18652,6 +18645,8 @@
 /* 138 */
 /***/ function(module, exports, __webpack_require__) {
 
+	"use strict";
+
 	var hogan = __webpack_require__(2);
 	var tmplSrc = __webpack_require__(139);
 	var tmpl = hogan.compile(tmplSrc);
@@ -18662,26 +18657,20 @@
 	var service = __webpack_require__(7);
 	var rUtil = __webpack_require__(14);
 
-	function Form(shahokokuho, patient){
-		this.shahokokuho = shahokokuho;
-		this.patient = patient;
-	}
-
-	Form.prototype.createDom = function(callbacks){
-		var patient = this.patient;
-		var shahokokuho = this.shahokokuho;
-		var data = {
+	exports.create = function(data, callbacks){
+		var shahokokuho = data.shahokokuho;
+		var patient = data.patient;
+		var tmplData = {
 			last_name: patient.last_name,
 			first_name: patient.first_name
 		};
 		Object.keys(shahokokuho).forEach(function(key){
-			data[key] = shahokokuho[key];
+			tmplData[key] = shahokokuho[key];
 		});
-		var html = tmpl.render(data, {
+		var html = tmpl.render(tmplData, {
 			"date-input": dateInputTmpl
 		});
-		this.dom = rUtil.makeNode(html);
-		var dom = this.dom;
+		var dom = rUtil.makeNode(html);
 		var validFromInput = new DateInput(dom.querySelector(".valid-from-element"));
 		validFromInput.setGengou("平成");
 		if( shahokokuho.valid_from ){
@@ -18694,16 +18683,21 @@
 		}
 		setKourei(dom, shahokokuho.kourei);
 		dom.querySelector(".enter").addEventListener("click", function(){
-			callbacks.onEnter();
+			var errs = [];
+			var values = getValues(dom, errs);		
+			if( errs.length > 0 ){
+				setError(dom, errs);
+				return;
+			}
+			callbacks.onEnter(values);
 		});
 		dom.querySelector(".cancel").addEventListener("click", function(){
 			callbacks.onCancel();
 		});
-		return this.dom;
+		return dom;
 	};
 
-	Form.prototype.getValues = function(errs){
-		var dom = this.dom;
+	function getValues(dom, errs){
 		return {
 			hokensha_bangou: hokenshaBangouValue(dom, errs),
 			hihokensha_kigou: hihokenshaKigouValue(dom, errs),
@@ -18715,8 +18709,8 @@
 		};
 	};
 
-	Form.prototype.setError = function(errs){
-		var box = this.dom.querySelector(".error");
+	function setError(dom, errs){
+		var box = dom.querySelector(".error");
 		box.innerHTML = "";
 		errs.forEach(function(err){
 			var row = document.createElement("div");
@@ -18806,7 +18800,6 @@
 		dom.querySelector('input[name=kourei][value="' + value + '"]').checked = true;
 	}
 
-	module.exports = Form;
 
 
 /***/ },
@@ -19014,6 +19007,7 @@
 
 	var Disp = __webpack_require__(145);
 	var Subpanel = __webpack_require__(130);
+	var rUtil = __webpack_require__(14);
 
 	exports.setup = function(wrapper, hoken_list, patient){
 		var sub = Subpanel.create("後期高齢", function(subdom){
@@ -19039,8 +19033,15 @@
 			subdom.classList.add("listening-to-koukikourei-deleted");
 
 			subdom.addEventListener("koukikourei-deleted", function(event){
-				if( event.detail.patient_id !== patient.patient_id ){
+				var koukikourei = event.detail;
+				if( koukikourei.patient_id !== patient.patient_id ){
 					return;
+				}
+				var relNodes = subdom.querySelectorAll("*[data-koukikourei-id='" + koukikourei.koukikourei_id + "']");
+				var i, n;
+				n = relNodes.length;
+				for(i=0;i<n;i++){
+					rUtil.removeNode(relNodes.item(i));
 				}
 				var nodes = subdom.querySelectorAll(".koukikourei-disp");
 				if( nodes.length === 0 ){
@@ -19073,7 +19074,13 @@
 
 	exports.create = function(koukikourei, patient){
 		var rep = "後期高齢（" + koukikourei.futan_wari + "割）";
-		var html = tmpl.render({ label: rep });
+		var data = {
+			label: rep
+		};
+		Object.keys(koukikourei).forEach(function(key){
+			data[key] = koukikourei[key];
+		});
+		var html = tmpl.render(data);
 		var dom = rUtil.makeNode(html);
 		bindDetail(dom, koukikourei, patient);
 		return dom;
@@ -19094,8 +19101,7 @@
 					doDelete(dom, detail, koukikourei);
 				}
 			});
-			detail.style.border = "1px solid #999";
-			detail.style.padding = "4px";
+			detail.classList.add("form-wrapper");
 			dom.style.display = "none";
 			dom.parentNode.insertBefore(detail, dom);
 		});
@@ -19131,19 +19137,17 @@
 						return;
 					}
 					var newDisp = exports.create(updatedKoukikourei, patient);
-					rUtil.removeNode(formWrapper);
+					rUtil.removeNode(form);
 					disp.parentNode.replaceChild(newDisp, disp);
 				});
 			},
 			onCancel: function(){
-				rUtil.removeNode(formWrapper);
+				rUtil.removeNode(form);
 				disp.style.display = "block";
 			}
 		});
-		var formWrapper = document.createElement("div");
-		formWrapper.classList.add("form-wrapper");
-		formWrapper.appendChild(form);
-		disp.parentNode.insertBefore(formWrapper, disp);
+		form.classList.add("form-wrapper");
+		disp.parentNode.insertBefore(form, disp);
 	}
 
 	function doDelete(disp, detail, koukikourei){
@@ -19155,14 +19159,11 @@
 				alert(err);
 				return;
 			}
-			var parentNode = disp.parentNode;
-			rUtil.removeNode(detail);
-			rUtil.removeNode(disp);
 			var e = new CustomEvent("broadcast-koukikourei-deleted", {
 				bubbles: true,
-				detail: {patient_id: koukikourei.patient_id}
+				detail: koukikourei
 			});
-			parentNode.dispatchEvent(e);
+			disp.dispatchEvent(e);
 		});
 	}
 
@@ -19171,7 +19172,7 @@
 /* 146 */
 /***/ function(module, exports) {
 
-	module.exports = "<div class=\"koukikourei-disp\">\r\n\t{{label}}\r\n\t<a href=\"javascript:void(0)\" class=\"detail\">詳細</a>\r\n</div>\r\n\r\n\r\n"
+	module.exports = "<div class=\"koukikourei-disp\" data-koukikourei-id=\"{{koukikourei_id}}\">\r\n\t{{label}}\r\n\t<a href=\"javascript:void(0)\" class=\"detail\">詳細</a>\r\n</div>\r\n\r\n\r\n"
 
 /***/ },
 /* 147 */
@@ -19717,7 +19718,7 @@
 /* 156 */
 /***/ function(module, exports) {
 
-	module.exports = "<div>\r\n\t<div style=\"font-weight:bold\">{{last_name}} {{first_name}}</div>\r\n\t<div class=\"error\" style=\"display:none\"></div>\r\n    <form onsubmit=\"return false;\">\r\n        <table>\r\n            <tr>\r\n                <td><label for=\"hokensha_bangou\">保険者番号</label></td>\r\n                <td><input name=\"hokensha_bangou\" value=\"{{hokensha_bangou}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"hihokensha_bangou\">被保険者番号</label></td>\r\n                <td><input name=\"hihokensha_bangou\" value=\"{{hihokensha_bangou}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"futan_wari\">負担割合</label></td>\r\n                <td>\r\n                    <input type=\"radio\" name=\"futan_wari\" value=\"1\"/>1割\r\n                    <input type=\"radio\" name=\"futan_wari\" value=\"2\"/>2割\r\n                    <input type=\"radio\" name=\"futan_wari\" value=\"3\"/>3割\r\n                </td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_from\">有効期限（から）</label></td>\r\n                <td class=\"valid-from-element\">{{> date-input}}</td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_upto\">有効期限（まで）</label></td>\r\n                <td class=\"valid-upto-element\">{{> date-input}}</td>\r\n            </tr>\r\n        </table>\r\n    </form>\r\n    <div>\r\n        <button class=\"enter\">入力</button>\r\n        <button class=\"cancel\">キャンセル</button>\r\n    </div>\r\n</div>\r\n"
+	module.exports = "<div data-koukikourei-id=\"{{koukikourei_id}}\">\r\n\t<div style=\"font-weight:bold\">{{last_name}} {{first_name}}</div>\r\n\t<div class=\"error\" style=\"display:none\"></div>\r\n    <form onsubmit=\"return false;\">\r\n        <table>\r\n            <tr>\r\n                <td><label for=\"hokensha_bangou\">保険者番号</label></td>\r\n                <td><input name=\"hokensha_bangou\" value=\"{{hokensha_bangou}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"hihokensha_bangou\">被保険者番号</label></td>\r\n                <td><input name=\"hihokensha_bangou\" value=\"{{hihokensha_bangou}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"futan_wari\">負担割合</label></td>\r\n                <td>\r\n                    <input type=\"radio\" name=\"futan_wari\" value=\"1\"/>1割\r\n                    <input type=\"radio\" name=\"futan_wari\" value=\"2\"/>2割\r\n                    <input type=\"radio\" name=\"futan_wari\" value=\"3\"/>3割\r\n                </td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_from\">有効期限（から）</label></td>\r\n                <td class=\"valid-from-element\">{{> date-input}}</td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_upto\">有効期限（まで）</label></td>\r\n                <td class=\"valid-upto-element\">{{> date-input}}</td>\r\n            </tr>\r\n        </table>\r\n    </form>\r\n    <div>\r\n        <button class=\"enter\">入力</button>\r\n        <button class=\"cancel\">キャンセル</button>\r\n    </div>\r\n</div>\r\n"
 
 /***/ },
 /* 157 */
@@ -19897,7 +19898,7 @@
 /* 161 */
 /***/ function(module, exports) {
 
-	module.exports = "<div>\r\n\t<table>\r\n\t<tr>\r\n\t\t<td>保険者番号</td>\r\n\t\t<td>{{hokensha_bangou}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t\t<td>被保険者番号</td>\r\n\t\t<td>{{hihokensha_bangou}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>負担割</td>\r\n\t    <td>{{futan_wari}}割</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（から）</td>\r\n\t    <td>{{valid_from_as_kanji}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（まで）</td>\r\n\t    <td>{{valid_upto_as_kanji}}</td>\r\n\t</tr>\r\n\t</table>\r\n\t<div class=\"cmd-wrapper\" style=\"text-align:right;margin-right:4px\">\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link close-koukikourei\">閉じる</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link edit-koukikourei\">編集</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link delete-koukikourei\">削除</a>\r\n\t</div>\r\n</div>\r\n"
+	module.exports = "<div class=\"koukikourei-detail\" data-koukikourei-id=\"{{koukikourei_id}}\">\r\n\t<table>\r\n\t<tr>\r\n\t\t<td>保険者番号</td>\r\n\t\t<td>{{hokensha_bangou}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t\t<td>被保険者番号</td>\r\n\t\t<td>{{hihokensha_bangou}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>負担割</td>\r\n\t    <td>{{futan_wari}}割</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（から）</td>\r\n\t    <td>{{valid_from_as_kanji}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（まで）</td>\r\n\t    <td>{{valid_upto_as_kanji}}</td>\r\n\t</tr>\r\n\t</table>\r\n\t<div class=\"cmd-wrapper\" style=\"text-align:right;margin-right:4px\">\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link close-koukikourei\">閉じる</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link edit-koukikourei\">編集</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link delete-koukikourei\">削除</a>\r\n\t</div>\r\n</div>\r\n"
 
 /***/ },
 /* 162 */

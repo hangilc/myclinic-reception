@@ -15,6 +15,7 @@ var KouhiForm = require("./kouhi-form.js");
 var tmplSrc = require("raw!./patient-info.html");
 var conti = require("conti");
 var service = require("myclinic-service-api");
+var rUtil = require("../reception-util.js");
 
 exports.add = function(data){
 	var patient = data.patient;
@@ -58,19 +59,14 @@ exports.add = function(data){
 
 function newShahokokuho(patient, wrapper){
 	var sub = Subpanel.create("新規社保・国保入力", function(dom){
-		var form = new ShahokokuhoForm({
-			patient_id: patient.patient_id,
-			honnin: 0,
-			kourei: 0	
-		}, patient);
-		dom.appendChild(form.createDom({
-			onEnter: function(){
-				var errs = [];
-				var values = form.getValues(errs);
-				if( errs.length > 0 ){
-					form.setError(errs);
-					return;
-				}
+		var form = ShahokokuhoForm.create({
+			patient: patient,
+			shahokokuho: {
+				honnin: 0,
+				kourei: 0
+			}
+		}, {
+			onEnter: function(values){
 				values.patient_id = patient.patient_id;
 				var enteredShahokokuho;
 				conti.exec([
@@ -97,13 +93,14 @@ function newShahokokuho(patient, wrapper){
 						detail: enteredShahokokuho
 					});
 					wrapper.dispatchEvent(e);
-					sub.parentNode.removeChild(sub);
+					rUtil.removeNode(sub);
 				});
 			},
 			onCancel: function(){
-				sub.parentNode.removeChild(sub);
+				rUtil.removeNode(sub);
 			}
-		}));
+		});
+		dom.appendChild(form);
 	});
 	var commands = wrapper.querySelector("[data-role=patient-info-commands]");
 	commands.parentNode.insertBefore(sub, commands);

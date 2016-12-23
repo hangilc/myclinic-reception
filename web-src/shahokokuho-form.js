@@ -1,3 +1,5 @@
+"use strict";
+
 var hogan = require("hogan.js");
 var tmplSrc = require("raw!./shahokokuho-form.html");
 var tmpl = hogan.compile(tmplSrc);
@@ -8,26 +10,20 @@ var conti = require("conti");
 var service = require("myclinic-service-api");
 var rUtil = require("../reception-util.js");
 
-function Form(shahokokuho, patient){
-	this.shahokokuho = shahokokuho;
-	this.patient = patient;
-}
-
-Form.prototype.createDom = function(callbacks){
-	var patient = this.patient;
-	var shahokokuho = this.shahokokuho;
-	var data = {
+exports.create = function(data, callbacks){
+	var shahokokuho = data.shahokokuho;
+	var patient = data.patient;
+	var tmplData = {
 		last_name: patient.last_name,
 		first_name: patient.first_name
 	};
 	Object.keys(shahokokuho).forEach(function(key){
-		data[key] = shahokokuho[key];
+		tmplData[key] = shahokokuho[key];
 	});
-	var html = tmpl.render(data, {
+	var html = tmpl.render(tmplData, {
 		"date-input": dateInputTmpl
 	});
-	this.dom = rUtil.makeNode(html);
-	var dom = this.dom;
+	var dom = rUtil.makeNode(html);
 	var validFromInput = new DateInput(dom.querySelector(".valid-from-element"));
 	validFromInput.setGengou("平成");
 	if( shahokokuho.valid_from ){
@@ -40,16 +36,21 @@ Form.prototype.createDom = function(callbacks){
 	}
 	setKourei(dom, shahokokuho.kourei);
 	dom.querySelector(".enter").addEventListener("click", function(){
-		callbacks.onEnter();
+		var errs = [];
+		var values = getValues(dom, errs);		
+		if( errs.length > 0 ){
+			setError(dom, errs);
+			return;
+		}
+		callbacks.onEnter(values);
 	});
 	dom.querySelector(".cancel").addEventListener("click", function(){
 		callbacks.onCancel();
 	});
-	return this.dom;
+	return dom;
 };
 
-Form.prototype.getValues = function(errs){
-	var dom = this.dom;
+function getValues(dom, errs){
 	return {
 		hokensha_bangou: hokenshaBangouValue(dom, errs),
 		hihokensha_kigou: hihokenshaKigouValue(dom, errs),
@@ -61,8 +62,8 @@ Form.prototype.getValues = function(errs){
 	};
 };
 
-Form.prototype.setError = function(errs){
-	var box = this.dom.querySelector(".error");
+function setError(dom, errs){
+	var box = dom.querySelector(".error");
 	box.innerHTML = "";
 	errs.forEach(function(err){
 		var row = document.createElement("div");
@@ -152,4 +153,3 @@ function setKourei(dom, value){
 	dom.querySelector('input[name=kourei][value="' + value + '"]').checked = true;
 }
 
-module.exports = Form;

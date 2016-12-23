@@ -60,15 +60,11 @@ function bindDetail(dom, shahokokuho, patient){
 
 function doEdit(dom, shahokokuho, patient){
 	dom.style.display = "none";
-	var form = new ShahokokuhoForm(shahokokuho, patient);
-	var formDom = form.createDom({
-		onEnter: function(){
-			var errs = [];
-			var values = form.getValues(errs);
-			if( errs.length > 0 ){
-				form.setError(errs);
-				return;
-			}
+	var form = ShahokokuhoForm.create({
+		shahokokuho: shahokokuho,
+		patient: patient
+	}, {
+		onEnter: function(values){
 			values.shahokokuho_id = shahokokuho.shahokokuho_id;
 			values.patient_id = shahokokuho.patient_id;
 			var updatedShahokokuho;
@@ -92,16 +88,16 @@ function doEdit(dom, shahokokuho, patient){
 					return;
 				}
 				var newDom = exports.create(updatedShahokokuho, patient);
-				formDom.parentNode.removeChild(formDom);
+				rUtil.removeNode(form);
 				dom.parentNode.replaceChild(newDom, dom);
 			});
 		},
 		onCancel: function(){
-			formDom.parentNode.removeChild(formDom);
+			rUtil.removeNode(form);
 			dom.style.display = "block";
 		}
 	});
-	formDom.classList.add("form-wrapper");
+	form.classList.add("form-wrapper");
 	dom.style.display = "none";
-	dom.parentNode.insertBefore(formDom, dom);
+	dom.parentNode.insertBefore(form, dom);
 }
