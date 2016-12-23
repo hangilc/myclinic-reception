@@ -40,8 +40,14 @@ function bindDetail(dom, shahokokuho, patient){
 						alert(err);
 						return;
 					}
+					var parentNode = dom.parentNode;
 					detail.parentNode.removeChild(detail);
 					dom.parentNode.removeChild(dom);
+					var e = new CustomEvent("broadcast-shahokokuho-deleted", {
+						bubbles: true,
+						detail: { patient_id: shahokokuho.patient_id }
+					});
+					parentNode.dispatchEvent(e);
 				});
 			}
 		});

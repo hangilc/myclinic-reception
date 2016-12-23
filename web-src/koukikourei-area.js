@@ -1,13 +1,6 @@
 var Disp = require("./koukikourei-disp.js");
 var Subpanel = require("./subpanel.js");
 
-exports.render = function(dom, hokenList, patient){
-	hokenList.forEach(function(hoken){
-		var node = Disp.create(hoken, patient);
-		dom.appendChild(node);
-	});
-};
-
 exports.setup = function(wrapper, hoken_list, patient){
 	sub = Subpanel.create("後期高齢", function(subdom){
 		hoken_list.forEach(function(hoken){
@@ -27,7 +20,7 @@ exports.setup = function(wrapper, hoken_list, patient){
 		if( hoken.patient_id !== patient.patient_id ){
 			return;
 		}
-		var node = Disp.create(hoken);
+		var node = Disp.create(hoken, patient);
 		sub.appendChild(node);
 		if( sub.style.display === "none" ){
 			sub.style.display = "block";

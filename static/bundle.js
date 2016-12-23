@@ -196,6 +196,11 @@
 		}
 	});
 
+	document.addEventListener("broadcast-shahokokuho-deleted", function(event){
+		var e = new CustomEvent("shahokokuho-deleted", { detail: event.detail });
+		broadcast(".listening-to-shahokokuho-deleted", e);
+	});
+
 	document.addEventListener("broadcast-koukikourei-entered", function(event){
 		var koukikourei = event.detail;
 		var e = new CustomEvent("koukikourei-entered", { detail: koukikourei });
@@ -18088,18 +18093,14 @@
 		var patient = data.patient;
 		var hoken = data.hoken;
 		var sub;
-		Panel.add("患者情報", function(dom, wrapper){
+		var title = "患者情報（" + patient.last_name + patient.first_name + "）";
+		Panel.add(title, function(dom, wrapper){
 			dom.innerHTML = tmplSrc;
 			sub = Subpanel.create("基本情報", function(subdom){
 				BasicInfo.render(subdom, patient);
 			});
 			dom.querySelector(".basic-info-wrapper").appendChild(sub);
-			if( hoken.shahokokuho_list.length > 0 ){
-				sub = Subpanel.create("社保・国保", function(subdom){
-					ShahokokuhoArea.render(subdom, hoken.shahokokuho_list, patient);
-				});
-				dom.querySelector(".shahokokuho-wrapper").appendChild(sub);
-			}
+			ShahokokuhoArea.setup(dom.querySelector(".shahokokuho-wrapper"), hoken.shahokokuho_list, patient);
 			KoukikoureiArea.setup(dom.querySelector(".koukikourei-wrapper"), hoken.koukikourei_list, patient);
 			if( hoken.roujin_list.length > 0 ){
 				sub = Subpanel.create("老人保険", function(subdom){
@@ -18438,7 +18439,10 @@
 /* 135 */
 /***/ function(module, exports, __webpack_require__) {
 
+	"use strict";
+
 	var Disp = __webpack_require__(136);
+	var Subpanel = __webpack_require__(130);
 
 	exports.render = function(dom, shahokokuhoList, patient){
 		shahokokuhoList.forEach(function(hoken){
@@ -18455,7 +18459,44 @@
 		});
 	};
 
+	exports.setup = function(wrapper, hoken_list, patient){
+		var sub = Subpanel.create("社保・国保", function(subdom){
+			hoken_list.forEach(function(hoken){
+				var disp = Disp.create(hoken, patient);
+				subdom.appendChild(disp);
+			});
 
+			subdom.classList.add("listening-to-shahokokuho-entered");
+
+			subdom.addEventListener("shahokokuho-entered", function(event){
+				var hoken = event.detail;
+				if( hoken.patient_id !== patient.patient_id ){
+					return;
+				}
+				var node = Disp.create(hoken, patient);
+				subdom.appendChild(node);
+				if( sub.style.display === "none" ){
+					sub.style.display = "block";
+				}
+			});
+
+			subdom.classList.add("listening-to-shahokokuho-deleted");
+
+			subdom.addEventListener("shahokokuho-deleted", function(event){
+				if( event.detail.patient_id !== patient.patient_id ){
+					return;
+				}
+				var nodes = subdom.querySelectorAll(".shahokokuho-disp");
+				if( nodes.length === 0 ){
+					sub.style.display = "none";
+				}
+			});
+		});
+		if( hoken_list.length === 0 ){
+			sub.style.display = "none";
+		}
+		wrapper.append(sub);
+	}
 
 
 /***/ },
@@ -18504,8 +18545,14 @@
 							alert(err);
 							return;
 						}
+						var parentNode = dom.parentNode;
 						detail.parentNode.removeChild(detail);
 						dom.parentNode.removeChild(dom);
+						var e = new CustomEvent("broadcast-shahokokuho-deleted", {
+							bubbles: true,
+							detail: { patient_id: shahokokuho.patient_id }
+						});
+						parentNode.dispatchEvent(e);
 					});
 				}
 			});
@@ -18623,7 +18670,7 @@
 /* 137 */
 /***/ function(module, exports) {
 
-	module.exports = "<div>\r\n\t{{label}}\r\n\t<a href=\"javascript:void(0)\" class=\"detail\">詳細</a>\r\n</div>\r\n\r\n"
+	module.exports = "<div class=\"shahokokuho-disp\">\r\n\t{{label}}\r\n\t<a href=\"javascript:void(0)\" class=\"detail\">詳細</a>\r\n</div>\r\n\r\n"
 
 /***/ },
 /* 138 */
@@ -18992,13 +19039,6 @@
 	var Disp = __webpack_require__(145);
 	var Subpanel = __webpack_require__(130);
 
-	exports.render = function(dom, hokenList, patient){
-		hokenList.forEach(function(hoken){
-			var node = Disp.create(hoken, patient);
-			dom.appendChild(node);
-		});
-	};
-
 	exports.setup = function(wrapper, hoken_list, patient){
 		sub = Subpanel.create("後期高齢", function(subdom){
 			hoken_list.forEach(function(hoken){
@@ -19018,7 +19058,7 @@
 			if( hoken.patient_id !== patient.patient_id ){
 				return;
 			}
-			var node = Disp.create(hoken);
+			var node = Disp.create(hoken, patient);
 			sub.appendChild(node);
 			if( sub.style.display === "none" ){
 				sub.style.display = "block";

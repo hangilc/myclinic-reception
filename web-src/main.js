@@ -150,6 +150,11 @@ document.addEventListener("broadcast-shahokokuho-entered", function(event){
 	}
 });
 
+document.addEventListener("broadcast-shahokokuho-deleted", function(event){
+	var e = new CustomEvent("shahokokuho-deleted", { detail: event.detail });
+	broadcast(".listening-to-shahokokuho-deleted", e);
+});
+
 document.addEventListener("broadcast-koukikourei-entered", function(event){
 	var koukikourei = event.detail;
 	var e = new CustomEvent("koukikourei-entered", { detail: koukikourei });

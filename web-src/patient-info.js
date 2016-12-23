@@ -20,18 +20,14 @@ exports.add = function(data){
 	var patient = data.patient;
 	var hoken = data.hoken;
 	var sub;
-	Panel.add("患者情報", function(dom, wrapper){
+	var title = "患者情報（" + patient.last_name + patient.first_name + "）";
+	Panel.add(title, function(dom, wrapper){
 		dom.innerHTML = tmplSrc;
 		sub = Subpanel.create("基本情報", function(subdom){
 			BasicInfo.render(subdom, patient);
 		});
 		dom.querySelector(".basic-info-wrapper").appendChild(sub);
-		if( hoken.shahokokuho_list.length > 0 ){
-			sub = Subpanel.create("社保・国保", function(subdom){
-				ShahokokuhoArea.render(subdom, hoken.shahokokuho_list, patient);
-			});
-			dom.querySelector(".shahokokuho-wrapper").appendChild(sub);
-		}
+		ShahokokuhoArea.setup(dom.querySelector(".shahokokuho-wrapper"), hoken.shahokokuho_list, patient);
 		KoukikoureiArea.setup(dom.querySelector(".koukikourei-wrapper"), hoken.koukikourei_list, patient);
 		if( hoken.roujin_list.length > 0 ){
 			sub = Subpanel.create("老人保険", function(subdom){
