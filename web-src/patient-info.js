@@ -34,19 +34,19 @@ exports.add = function(data){
 		}
 		if( hoken.koukikourei_list.length > 0 ){
 			sub = Subpanel.create("後期高齢", function(subdom){
-				KoukikoureiArea.render(subdom, hoken.koukikourei_list);
+				KoukikoureiArea.render(subdom, hoken.koukikourei_list, patient);
 			});
 			dom.querySelector(".koukikourei-wrapper").appendChild(sub);
 		}
 		if( hoken.roujin_list.length > 0 ){
 			sub = Subpanel.create("老人保険", function(subdom){
-				RoujinArea.render(subdom, hoken.roujin_list);
+				RoujinArea.render(subdom, hoken.roujin_list, patient);
 			});
 			dom.querySelector(".roujin-wrapper").appendChild(sub);
 		}
 		if( hoken.kouhi_list.length > 0) {
 			sub = Subpanel.create("公費", function(subdom){
-				KouhiArea.render(subdom, hoken.kouhi_list);
+				KouhiArea.render(subdom, hoken.kouhi_list, patient);
 			});
 			dom.querySelector(".kouhi-wrapper").appendChild(sub);
 		}

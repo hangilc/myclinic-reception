@@ -1,6 +1,6 @@
 var Disp = require("./roujin-disp.js");
 
-exports.render = function(dom, hokenList){
+exports.render = function(dom, hokenList, patient){
 	hokenList.forEach(function(hoken){
 		var node = Disp.create(hoken);
 		dom.appendChild(node);

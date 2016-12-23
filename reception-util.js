@@ -28,6 +28,10 @@ exports.todayAsSqlDate = function(){
 	return moment().format("YYYY-MM-DD");
 };
 
+exports.validFromAsKanji = function(d){
+	return kanjidate.format(kanjidate.f2, d);
+};
+
 exports.validUptoAsKanji = function(d){
 	if( d === "0000-00-00" ){
 		return "（期限なし）";
@@ -46,5 +50,9 @@ exports.makeNodeList = function(html){
 	var dom = document.createElement("div");
 	dom.innerHTML = html;
 	return dom.childNodes;
+};
+
+exports.removeNode = function(node){
+	node.parentNode.removeChild(node);
 };
 

@@ -2734,6 +2734,10 @@
 		return moment().format("YYYY-MM-DD");
 	};
 
+	exports.validFromAsKanji = function(d){
+		return kanjidate.format(kanjidate.f2, d);
+	};
+
 	exports.validUptoAsKanji = function(d){
 		if( d === "0000-00-00" ){
 			return "（期限なし）";
@@ -2752,6 +2756,10 @@
 		var dom = document.createElement("div");
 		dom.innerHTML = html;
 		return dom.childNodes;
+	};
+
+	exports.removeNode = function(node){
+		node.parentNode.removeChild(node);
 	};
 
 
@@ -18081,19 +18089,19 @@
 			}
 			if( hoken.koukikourei_list.length > 0 ){
 				sub = Subpanel.create("後期高齢", function(subdom){
-					KoukikoureiArea.render(subdom, hoken.koukikourei_list);
+					KoukikoureiArea.render(subdom, hoken.koukikourei_list, patient);
 				});
 				dom.querySelector(".koukikourei-wrapper").appendChild(sub);
 			}
 			if( hoken.roujin_list.length > 0 ){
 				sub = Subpanel.create("老人保険", function(subdom){
-					RoujinArea.render(subdom, hoken.roujin_list);
+					RoujinArea.render(subdom, hoken.roujin_list, patient);
 				});
 				dom.querySelector(".roujin-wrapper").appendChild(sub);
 			}
 			if( hoken.kouhi_list.length > 0) {
 				sub = Subpanel.create("公費", function(subdom){
-					KouhiArea.render(subdom, hoken.kouhi_list);
+					KouhiArea.render(subdom, hoken.kouhi_list, patient);
 				});
 				dom.querySelector(".kouhi-wrapper").appendChild(sub);
 			}
@@ -18954,9 +18962,9 @@
 
 	var Disp = __webpack_require__(145);
 
-	exports.render = function(dom, hokenList){
+	exports.render = function(dom, hokenList, patient){
 		hokenList.forEach(function(hoken){
-			var node = Disp.create(hoken);
+			var node = Disp.create(hoken, patient);
 			dom.appendChild(node);
 		});
 
@@ -18980,11 +18988,37 @@
 	var tmpl = hogan.compile(tmplSrc);
 	var mUtil = __webpack_require__(134);
 	var rUtil = __webpack_require__(14);
+	var Detail = __webpack_require__(160);
 
-	exports.create = function(koukikourei){
-		var rep = mUtil.koukikoureiRep(koukikourei.futan_wari);
+	exports.create = function(koukikourei, patient){
+		var rep = "後期高齢（" + koukikourei.futan_wari + "割）";
 		var html = tmpl.render({ label: rep });
-		return rUtil.makeNode(html);
+		var dom = rUtil.makeNode(html);
+		bindDetail(dom, koukikourei, patient);
+		return dom;
+	}
+
+	function bindDetail(dom, koukikourei, patient){
+		dom.querySelector(".detail").addEventListener("click", function(){
+			var detail = Detail.create(koukikourei, patient, {
+				onClose: function(){
+					rUtil.removeNode(detail);
+					dom.style.display = "block";	
+				},
+				onEdit: function(){
+					console.log("ON-EDIT");	
+
+				},
+				onDelete: function(){
+					console.log("ON-DELETE");	
+
+				}
+			});
+			detail.style.border = "1px solid #999";
+			detail.style.padding = "4px";
+			dom.style.display = "none";
+			dom.parentNode.insertBefore(detail, dom);
+		});
 	}
 
 
@@ -18992,7 +19026,7 @@
 /* 146 */
 /***/ function(module, exports) {
 
-	module.exports = "<div>\r\n\t{{label}}\r\n</div>\r\n\r\n\r\n"
+	module.exports = "<div>\r\n\t{{label}}\r\n\t<a href=\"javascript:void(0)\" class=\"detail\">詳細</a>\r\n</div>\r\n\r\n\r\n"
 
 /***/ },
 /* 147 */
@@ -19000,7 +19034,7 @@
 
 	var Disp = __webpack_require__(148);
 
-	exports.render = function(dom, hokenList){
+	exports.render = function(dom, hokenList, patient){
 		hokenList.forEach(function(hoken){
 			var node = Disp.create(hoken);
 			dom.appendChild(node);
@@ -19046,7 +19080,7 @@
 
 	var Disp = __webpack_require__(151);
 
-	exports.render = function(dom, hokenList){
+	exports.render = function(dom, hokenList, patient){
 		hokenList.forEach(function(hoken){
 			var node = Disp.create(hoken);
 			dom.appendChild(node);
@@ -19452,6 +19486,48 @@
 /***/ function(module, exports) {
 
 	module.exports = "<div class=\"basic-info-wrapper\"></div>\r\n<div class=\"shahokokuho-wrapper\"></div>\r\n<div class=\"koukikourei-wrapper\"></div>\r\n<div class=\"roujin-wrapper\"></div>\r\n<div class=\"kouhi-wrapper\"></div>\r\n<div class=\"command-wrapper\"></div>\r\n"
+
+/***/ },
+/* 160 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var hogan = __webpack_require__(2);
+	var tmplSrc = __webpack_require__(161);
+	var tmpl = hogan.compile(tmplSrc);
+	var rUtil = __webpack_require__(14);
+
+	exports.create = function(koukikourei, patient, callbacks){
+		var data = {
+			valid_from_as_kanji: rUtil.validFromAsKanji(koukikourei.valid_from),
+			valid_upto_as_kanji: rUtil.validUptoAsKanji(koukikourei.valid_upto)
+		};
+		Object.keys(koukikourei).forEach(function(key){
+			data[key] = koukikourei[key];
+		});
+		var html = tmpl.render(data);
+		var dom = rUtil.makeNode(html);
+		linkCallbacks(dom, callbacks);
+		return dom;
+	};
+
+	function linkCallbacks(dom, callbacks){
+		dom.querySelector(".close-koukikourei").addEventListener("click", function(){
+			callbacks.onClose();
+		});
+		dom.querySelector(".edit-koukikourei").addEventListener("click", function(){
+			callbacks.onEdit();
+		});
+		dom.querySelector(".delete-koukikourei").addEventListener("click", function(){
+			callbacks.onDelete();
+		});
+	}
+
+
+/***/ },
+/* 161 */
+/***/ function(module, exports) {
+
+	module.exports = "<div>\r\n\t<table>\r\n\t<tr>\r\n\t\t<td>保険者番号</td>\r\n\t\t<td>{{hokensha_bangou}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t\t<td>被保険者番号</td>\r\n\t\t<td>{{hihokensha_bangou}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（から）</td>\r\n\t    <td>{{valid_from_as_kanji}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（まで）</td>\r\n\t    <td>{{valid_upto_as_kanji}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>負担割</td>\r\n\t    <td>{{futan_wari}}割</td>\r\n\t</tr>\r\n\t</table>\r\n\t<div class=\"cmd-wrapper\" style=\"text-align:right;margin-right:4px\">\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link close-koukikourei\">閉じる</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link edit-koukikourei\">編集</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link delete-koukikourei\">削除</a>\r\n\t</div>\r\n</div>\r\n"
 
 /***/ }
 /******/ ]);

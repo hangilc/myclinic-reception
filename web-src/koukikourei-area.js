@@ -1,8 +1,8 @@
 var Disp = require("./koukikourei-disp.js");
 
-exports.render = function(dom, hokenList){
+exports.render = function(dom, hokenList, patient){
 	hokenList.forEach(function(hoken){
-		var node = Disp.create(hoken);
+		var node = Disp.create(hoken, patient);
 		dom.appendChild(node);
 	});
 
