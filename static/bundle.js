@@ -18113,12 +18113,7 @@
 			ShahokokuhoArea.setup(dom.querySelector(".shahokokuho-wrapper"), hoken.shahokokuho_list, patient);
 			KoukikoureiArea.setup(dom.querySelector(".koukikourei-wrapper"), hoken.koukikourei_list, patient);
 			RoujinArea.setup(dom.querySelector(".roujin-wrapper"), hoken.roujin_list, patient);
-			if( hoken.kouhi_list.length > 0) {
-				sub = Subpanel.create("公費", function(subdom){
-					KouhiArea.render(subdom, hoken.kouhi_list, patient);
-				});
-				dom.querySelector(".kouhi-wrapper").appendChild(sub);
-			}
+			KouhiArea.setup(dom.querySelector(".kouhi-wrapper"), hoken.kouhi_list, patient);
 			var commandBox = CommandBox.create(patient.patient_id, {
 				onNewShahokokuho: function(){
 					newShahokokuho(patient, wrapper);
@@ -18255,13 +18250,35 @@
 				}
 			};
 			var form = KouhiForm.create(data, {
-				onEntered: function(kouhi){
-					var e = new CustomEvent("broadcast-kouhi-entered", {
-						bubbles: true,
-						detail: kouhi
+				onEnter: function(values){
+					values.patient_id = patient.patient_id;
+					var enteredKouhi;
+					conti.exec([
+						function(done){
+							service.enterKouhi(values, done);	
+						},
+						function(done){
+							service.getKouhi(values.kouhi_id, function(err, result){
+								if( err ){
+									done(err);
+									return;
+								}
+								enteredKouhi = result;
+								done();
+							});
+						}
+					], function(err){
+						if( err ){
+							alert(err);
+							return;
+						}
+						var e = new CustomEvent("broadcast-kouhi-entered", {
+							bubbles: true,
+							detail: enteredKouhi
+						});
+						wrapper.dispatchEvent(e);
+						sub.parentNode.removeChild(sub);
 					});
-					wrapper.dispatchEvent(e);
-					sub.parentNode.removeChild(sub);
 				},
 				onCancel: function(){
 					sub.parentNode.removeChild(sub);
@@ -19374,21 +19391,48 @@
 /* 150 */
 /***/ function(module, exports, __webpack_require__) {
 
+	"use strict";
+
 	var Disp = __webpack_require__(151);
+	var Subpanel = __webpack_require__(130);
 
-	exports.render = function(dom, hokenList, patient){
-		hokenList.forEach(function(hoken){
-			var node = Disp.create(hoken);
-			dom.appendChild(node);
+	exports.setup = function(wrapper, hoken_list, patient){
+		var sub = Subpanel.create("公費", function(subdom){
+			hoken_list.forEach(function(hoken){
+				var disp = Disp.create(hoken, patient);
+				subdom.appendChild(disp);
+			});
+
+			subdom.classList.add("listening-to-kouhi-entered");
+
+			subdom.addEventListener("kouhi-entered", function(event){
+				var hoken = event.detail;
+				if( hoken.patient_id !== patient.patient_id ){
+					return;
+				}
+				var node = Disp.create(hoken, patient);
+				subdom.appendChild(node);
+				if( sub.style.display === "none" ){
+					sub.style.display = "block";
+				}
+			});
+
+			subdom.classList.add("listening-to-kouhi-deleted");
+
+			subdom.addEventListener("kouhi-deleted", function(event){
+				if( event.detail.patient_id !== patient.patient_id ){
+					return;
+				}
+				var nodes = subdom.querySelectorAll(".kouhi-disp");
+				if( nodes.length === 0 ){
+					sub.style.display = "none";
+				}
+			});
 		});
-
-		dom.classList.add("listening-to-kouhi-entered");
-
-		dom.addEventListener("kouhi-entered", function(event){
-			var hoken = event.detail;
-			var node = Disp.create(hoken);
-			dom.appendChild(node);
-		});
+		if( hoken_list.length === 0 ){
+			sub.style.display = "none";
+		}
+		wrapper.append(sub);
 	};
 
 
@@ -19402,11 +19446,104 @@
 	var tmpl = hogan.compile(tmplSrc);
 	var mUtil = __webpack_require__(134);
 	var rUtil = __webpack_require__(14);
+	var Detail = __webpack_require__(166);
+	var Form = __webpack_require__(157);
+	var service = __webpack_require__(7);
+	var conti = __webpack_require__(10);
 
-	exports.create = function(kouhi){
-		var rep = mUtil.kouhiRep(kouhi.futansha_bangou);
+	exports.create = function(kouhi, patient){
+		var rep = mUtil.kouhiRep(kouhi.futansha);
 		var html = tmpl.render({ label: rep });
-		return rUtil.makeNode(html);
+		var dom = rUtil.makeNode(html);
+		bindDetail(dom, kouhi, patient);
+		return dom;
+	}
+
+	function bindDetail(dom, kouhi, patient){
+		dom.querySelector(".detail").addEventListener("click", function(){
+			var detail = Detail.create(kouhi, patient, {
+				onClose: function(){
+					rUtil.removeNode(detail);
+					dom.style.display = "block";	
+				},
+				onEdit: function(){
+					rUtil.removeNode(detail);
+					doEdit(dom, kouhi, patient);
+				},
+				onDelete: function(){
+					doDelete(dom, detail, kouhi);
+				}
+			});
+			detail.style.border = "1px solid #999";
+			detail.style.padding = "4px";
+			dom.style.display = "none";
+			dom.parentNode.insertBefore(detail, dom);
+		});
+	}
+
+	function doEdit(disp, kouhi, patient){
+		var data = {
+			kouhi: kouhi,
+			patient: patient
+		};
+		var form = Form.create(data, {
+			onEnter: function(values){
+				values.kouhi_id = kouhi.kouhi_id;
+				values.patient_id = patient.patient_id;
+				var updatedKouhi;
+				conti.exec([
+					function(done){
+						service.updateKouhi(values, done);	
+					},
+					function(done){
+						service.getKouhi(values.kouhi_id, function(err, result){
+							if( err ){
+								done(err);
+								return;
+							}
+							updatedKouhi = result;
+							done();
+						});
+					}
+				], function(err){
+					if( err ){
+						alert(err);
+						return;
+					}
+					var newDisp = exports.create(updatedKouhi, patient);
+					rUtil.removeNode(formWrapper);
+					disp.parentNode.replaceChild(newDisp, disp);
+				});
+			},
+			onCancel: function(){
+				rUtil.removeNode(formWrapper);
+				disp.style.display = "block";
+			}
+		});
+		var formWrapper = document.createElement("div");
+		formWrapper.classList.add("form-wrapper");
+		formWrapper.appendChild(form);
+		disp.parentNode.insertBefore(formWrapper, disp);
+	}
+
+	function doDelete(disp, detail, kouhi){
+		if( !confirm("この公費を削除していいですか？") ){
+			return;
+		}
+		service.deleteKouhi(kouhi.kouhi_id, function(err){
+			if( err ){
+				alert(err);
+				return;
+			}
+			var parentNode = disp.parentNode;
+			rUtil.removeNode(detail);
+			rUtil.removeNode(disp);
+			var e = new CustomEvent("broadcast-kouhi-deleted", {
+				bubbles: true,
+				detail: {patient_id: kouhi.patient_id}
+			});
+			parentNode.dispatchEvent(e);
+		});
 	}
 
 
@@ -19414,7 +19551,7 @@
 /* 152 */
 /***/ function(module, exports) {
 
-	module.exports = "<div>\r\n\t{{label}}\r\n</div>\r\n\r\n"
+	module.exports = "<div class=\"kouhi-disp\">\r\n\t{{label}}\r\n\t<a href=\"javascript:void(0)\" class=\"detail\">詳細</a>\r\n</div>\r\n\r\n"
 
 /***/ },
 /* 153 */
@@ -19648,8 +19785,14 @@
 		}));
 		var validFromInput = new DateInput(dom.querySelector(".valid-from-element"));
 		validFromInput.setGengou("平成");
+		if( hoken.valid_from ){
+			validFromInput.set(hoken.valid_from);
+		}
 		var validUptoInput = new DateInput(dom.querySelector(".valid-upto-element"));
 		validUptoInput.setGengou("平成");
+		if( hoken.valid_upto && hoken.valid_upto !== "0000-00-00" ){
+			validUptoInput.set(hoken.valid_upto);
+		}
 		dom.querySelector(".enter").addEventListener("click", function(event){
 			var errors = [];
 			var values = formValues(dom, errors);
@@ -19657,29 +19800,7 @@
 				setError(dom, errors);
 				return;
 			}
-			values.patient_id = patient.patient_id;
-			var enteredKouhi;
-			conti.exec([
-				function(done){
-					service.enterKouhi(values, done);	
-				},
-				function(done){
-					service.getKouhi(values.kouhi_id, function(err, result){
-						if( err ){
-							done(err);
-							return;
-						}
-						enteredKouhi = result;
-						done();
-					});
-				}
-			], function(err){
-				if( err ){
-					alert(err);
-					return;
-				}
-				callbacks.onEntered(enteredKouhi);
-			});
+			callbacks.onEnter(values);
 		});
 		dom.querySelector(".cancel").addEventListener("click", function(event){
 			callbacks.onCancel();
@@ -19749,6 +19870,7 @@
 
 	function setError(dom, errs){
 		var box = dom.querySelector(".error");
+		box.innerHTML = "";
 		errs.forEach(function(err){
 			var d = document.createElement("div");
 			var t = document.createTextNode(err);
@@ -20011,6 +20133,50 @@
 /***/ function(module, exports) {
 
 	module.exports = "<div>\r\n\t<div style=\"font-weight:bold\">{{last_name}} {{first_name}}</div>\r\n\t<div class=\"error\" style=\"display:none\"></div>\r\n    <form onsubmit=\"return false;\">\r\n        <table>\r\n            <tr>\r\n                <td><label for=\"shichouson\">市町村番号</label></td>\r\n                <td><input name=\"shichouson\" value=\"{{shichouson}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"jukyuusha\">受給者番号</label></td>\r\n                <td><input name=\"jukyuusha\" value=\"{{jukyuusha}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"futan_wari\">負担割合</label></td>\r\n                <td>\r\n                    <input type=\"radio\" name=\"futan_wari\" value=\"1\"/>1割\r\n                    <input type=\"radio\" name=\"futan_wari\" value=\"2\"/>2割\r\n                    <input type=\"radio\" name=\"futan_wari\" value=\"3\"/>3割\r\n                </td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_from\">有効期限（から）</label></td>\r\n                <td class=\"valid-from-element\">{{> date-input}}</td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_upto\">有効期限（まで）</label></td>\r\n                <td class=\"valid-upto-element\">{{> date-input}}</td>\r\n            </tr>\r\n        </table>\r\n    </form>\r\n    <div>\r\n        <button class=\"enter\">入力</button>\r\n        <button class=\"cancel\">キャンセル</button>\r\n    </div>\r\n</div>\r\n"
+
+/***/ },
+/* 166 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	var hogan = __webpack_require__(2);
+	var tmplSrc = __webpack_require__(167);
+	var tmpl = hogan.compile(tmplSrc);
+	var rUtil = __webpack_require__(14);
+
+	exports.create = function(kouhi, patient, callbacks){
+		var data = {
+			valid_from_as_kanji: rUtil.validFromAsKanji(kouhi.valid_from),
+			valid_upto_as_kanji: rUtil.validUptoAsKanji(kouhi.valid_upto)
+		};
+		Object.keys(kouhi).forEach(function(key){
+			data[key] = kouhi[key];
+		});
+		var html = tmpl.render(data);
+		var dom = rUtil.makeNode(html);
+		linkCallbacks(dom, callbacks);
+		return dom;
+	};
+
+	function linkCallbacks(dom, callbacks){
+		dom.querySelector(".close-kouhi").addEventListener("click", function(){
+			callbacks.onClose();
+		});
+		dom.querySelector(".edit-kouhi").addEventListener("click", function(){
+			callbacks.onEdit();
+		});
+		dom.querySelector(".delete-kouhi").addEventListener("click", function(){
+			callbacks.onDelete();
+		});
+	}
+
+
+/***/ },
+/* 167 */
+/***/ function(module, exports) {
+
+	module.exports = "<div>\r\n\t<table>\r\n\t<tr>\r\n\t    <td>種類</td>\r\n\t    <td>{{rep}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>負担者番号</td>\r\n\t    <td>{{futansha}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>受給者番号</td>\r\n\t    <td>{{jukyuusha}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（から）</td>\r\n\t    <td>{{valid_from_as_kanji}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（まで）</td>\r\n\t    <td>{{valid_upto_as_kanji}}</td>\r\n\t</tr>\r\n\t</table>\r\n\t<div class=\"cmd-wrapper\" style=\"text-align:right;margin-right:4px\">\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link close-kouhi\">閉じる</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link edit-kouhi\">編集</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link delete-kouhi\">削除</a>\r\n\t</div>\r\n</div>\r\n"
 
 /***/ }
 /******/ ]);

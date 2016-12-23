@@ -23,8 +23,14 @@ exports.create = function(data, callbacks){
 	}));
 	var validFromInput = new DateInput(dom.querySelector(".valid-from-element"));
 	validFromInput.setGengou("平成");
+	if( hoken.valid_from ){
+		validFromInput.set(hoken.valid_from);
+	}
 	var validUptoInput = new DateInput(dom.querySelector(".valid-upto-element"));
 	validUptoInput.setGengou("平成");
+	if( hoken.valid_upto && hoken.valid_upto !== "0000-00-00" ){
+		validUptoInput.set(hoken.valid_upto);
+	}
 	dom.querySelector(".enter").addEventListener("click", function(event){
 		var errors = [];
 		var values = formValues(dom, errors);
@@ -32,29 +38,7 @@ exports.create = function(data, callbacks){
 			setError(dom, errors);
 			return;
 		}
-		values.patient_id = patient.patient_id;
-		var enteredKouhi;
-		conti.exec([
-			function(done){
-				service.enterKouhi(values, done);	
-			},
-			function(done){
-				service.getKouhi(values.kouhi_id, function(err, result){
-					if( err ){
-						done(err);
-						return;
-					}
-					enteredKouhi = result;
-					done();
-				});
-			}
-		], function(err){
-			if( err ){
-				alert(err);
-				return;
-			}
-			callbacks.onEntered(enteredKouhi);
-		});
+		callbacks.onEnter(values);
 	});
 	dom.querySelector(".cancel").addEventListener("click", function(event){
 		callbacks.onCancel();
@@ -124,6 +108,7 @@ function formValues(dom, errs){
 
 function setError(dom, errs){
 	var box = dom.querySelector(".error");
+	box.innerHTML = "";
 	errs.forEach(function(err){
 		var d = document.createElement("div");
 		var t = document.createTextNode(err);

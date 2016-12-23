@@ -30,12 +30,7 @@ exports.add = function(data){
 		ShahokokuhoArea.setup(dom.querySelector(".shahokokuho-wrapper"), hoken.shahokokuho_list, patient);
 		KoukikoureiArea.setup(dom.querySelector(".koukikourei-wrapper"), hoken.koukikourei_list, patient);
 		RoujinArea.setup(dom.querySelector(".roujin-wrapper"), hoken.roujin_list, patient);
-		if( hoken.kouhi_list.length > 0) {
-			sub = Subpanel.create("公費", function(subdom){
-				KouhiArea.render(subdom, hoken.kouhi_list, patient);
-			});
-			dom.querySelector(".kouhi-wrapper").appendChild(sub);
-		}
+		KouhiArea.setup(dom.querySelector(".kouhi-wrapper"), hoken.kouhi_list, patient);
 		var commandBox = CommandBox.create(patient.patient_id, {
 			onNewShahokokuho: function(){
 				newShahokokuho(patient, wrapper);
@@ -172,13 +167,35 @@ function newKouhi(patient, wrapper){
 			}
 		};
 		var form = KouhiForm.create(data, {
-			onEntered: function(kouhi){
-				var e = new CustomEvent("broadcast-kouhi-entered", {
-					bubbles: true,
-					detail: kouhi
+			onEnter: function(values){
+				values.patient_id = patient.patient_id;
+				var enteredKouhi;
+				conti.exec([
+					function(done){
+						service.enterKouhi(values, done);	
+					},
+					function(done){
+						service.getKouhi(values.kouhi_id, function(err, result){
+							if( err ){
+								done(err);
+								return;
+							}
+							enteredKouhi = result;
+							done();
+						});
+					}
+				], function(err){
+					if( err ){
+						alert(err);
+						return;
+					}
+					var e = new CustomEvent("broadcast-kouhi-entered", {
+						bubbles: true,
+						detail: enteredKouhi
+					});
+					wrapper.dispatchEvent(e);
+					sub.parentNode.removeChild(sub);
 				});
-				wrapper.dispatchEvent(e);
-				sub.parentNode.removeChild(sub);
 			},
 			onCancel: function(){
 				sub.parentNode.removeChild(sub);
