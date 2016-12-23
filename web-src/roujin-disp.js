@@ -10,7 +10,13 @@ var conti = require("conti");
 
 exports.create = function(roujin, patient){
 	var rep = "老人（" + roujin.futan_wari + "割）";
-	var html = tmpl.render({ label: rep });
+	var data = {
+		label: rep
+	};
+	Object.keys(roujin).forEach(function(key){
+		data[key] = roujin[key];
+	});
+	var html = tmpl.render(data);
 	var dom = rUtil.makeNode(html);
 	bindDetail(dom, roujin, patient);
 	return dom;
@@ -31,8 +37,7 @@ function bindDetail(dom, roujin, patient){
 				doDelete(dom, detail, roujin);
 			}
 		});
-		detail.style.border = "1px solid #999";
-		detail.style.padding = "4px";
+		detail.classList.add("form-wrapper");
 		dom.style.display = "none";
 		dom.parentNode.insertBefore(detail, dom);
 	});
@@ -68,19 +73,17 @@ function doEdit(disp, roujin, patient){
 					return;
 				}
 				var newDisp = exports.create(updatedRoujin, patient);
-				rUtil.removeNode(formWrapper);
+				rUtil.removeNode(form);
 				disp.parentNode.replaceChild(newDisp, disp);
 			});
 		},
 		onCancel: function(){
-			rUtil.removeNode(formWrapper);
+			rUtil.removeNode(form);
 			disp.style.display = "block";
 		}
 	});
-	var formWrapper = document.createElement("div");
-	formWrapper.classList.add("form-wrapper");
-	formWrapper.appendChild(form);
-	disp.parentNode.insertBefore(formWrapper, disp);
+	form.classList.add("form-wrapper");
+	disp.parentNode.insertBefore(form, disp);
 }
 
 function doDelete(disp, detail, roujin){
@@ -92,13 +95,10 @@ function doDelete(disp, detail, roujin){
 			alert(err);
 			return;
 		}
-		var parentNode = disp.parentNode;
-		rUtil.removeNode(detail);
-		rUtil.removeNode(disp);
 		var e = new CustomEvent("broadcast-roujin-deleted", {
 			bubbles: true,
-			detail: {patient_id: roujin.patient_id}
+			detail: roujin
 		});
-		parentNode.dispatchEvent(e);
+		disp.dispatchEvent(e);
 	});
 }

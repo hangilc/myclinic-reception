@@ -19182,6 +19182,7 @@
 
 	var Disp = __webpack_require__(148);
 	var Subpanel = __webpack_require__(130);
+	var rUtil = __webpack_require__(14);
 
 	exports.setup = function(wrapper, hoken_list, patient){
 		var sub = Subpanel.create("老人保険", function(subdom){
@@ -19207,8 +19208,15 @@
 			subdom.classList.add("listening-to-roujin-deleted");
 
 			subdom.addEventListener("roujin-deleted", function(event){
-				if( event.detail.patient_id !== patient.patient_id ){
+				var roujin = event.detail;
+				if( roujin.patient_id !== patient.patient_id ){
 					return;
+				}
+				var relNodes = subdom.querySelectorAll("*[data-roujin-id='" + roujin.roujin_id + "']");
+				var i, n;
+				n = relNodes.length;
+				for(i=0;i<n;i++){
+					rUtil.removeNode(relNodes.item(i));
 				}
 				var nodes = subdom.querySelectorAll(".roujin-disp");
 				if( nodes.length === 0 ){
@@ -19240,7 +19248,13 @@
 
 	exports.create = function(roujin, patient){
 		var rep = "老人（" + roujin.futan_wari + "割）";
-		var html = tmpl.render({ label: rep });
+		var data = {
+			label: rep
+		};
+		Object.keys(roujin).forEach(function(key){
+			data[key] = roujin[key];
+		});
+		var html = tmpl.render(data);
 		var dom = rUtil.makeNode(html);
 		bindDetail(dom, roujin, patient);
 		return dom;
@@ -19261,8 +19275,7 @@
 					doDelete(dom, detail, roujin);
 				}
 			});
-			detail.style.border = "1px solid #999";
-			detail.style.padding = "4px";
+			detail.classList.add("form-wrapper");
 			dom.style.display = "none";
 			dom.parentNode.insertBefore(detail, dom);
 		});
@@ -19298,19 +19311,17 @@
 						return;
 					}
 					var newDisp = exports.create(updatedRoujin, patient);
-					rUtil.removeNode(formWrapper);
+					rUtil.removeNode(form);
 					disp.parentNode.replaceChild(newDisp, disp);
 				});
 			},
 			onCancel: function(){
-				rUtil.removeNode(formWrapper);
+				rUtil.removeNode(form);
 				disp.style.display = "block";
 			}
 		});
-		var formWrapper = document.createElement("div");
-		formWrapper.classList.add("form-wrapper");
-		formWrapper.appendChild(form);
-		disp.parentNode.insertBefore(formWrapper, disp);
+		form.classList.add("form-wrapper");
+		disp.parentNode.insertBefore(form, disp);
 	}
 
 	function doDelete(disp, detail, roujin){
@@ -19322,14 +19333,11 @@
 				alert(err);
 				return;
 			}
-			var parentNode = disp.parentNode;
-			rUtil.removeNode(detail);
-			rUtil.removeNode(disp);
 			var e = new CustomEvent("broadcast-roujin-deleted", {
 				bubbles: true,
-				detail: {patient_id: roujin.patient_id}
+				detail: roujin
 			});
-			parentNode.dispatchEvent(e);
+			disp.dispatchEvent(e);
 		});
 	}
 
@@ -19338,7 +19346,7 @@
 /* 149 */
 /***/ function(module, exports) {
 
-	module.exports = "<div class=\"roujin-disp\">\r\n\t{{label}}\r\n\t<a href=\"javascript:void(0)\" class=\"detail\">詳細</a>\r\n</div>\r\n\r\n\r\n"
+	module.exports = "<div class=\"roujin-disp\" data-roujin-id=\"{{roujin_id}}\">\r\n\t{{label}}\r\n\t<a href=\"javascript:void(0)\" class=\"detail\">詳細</a>\r\n</div>\r\n\r\n\r\n"
 
 /***/ },
 /* 150 */
@@ -20090,13 +20098,13 @@
 /* 164 */
 /***/ function(module, exports) {
 
-	module.exports = "<div>\r\n\t<table>\r\n\t<tr>\r\n\t\t<td>市町村番号</td>\r\n\t\t<td>{{shichouson}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t\t<td>受給者番号</td>\r\n\t\t<td>{{jukyuusha}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>負担割</td>\r\n\t    <td>{{futan_wari}}割</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（から）</td>\r\n\t    <td>{{valid_from_as_kanji}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（まで）</td>\r\n\t    <td>{{valid_upto_as_kanji}}</td>\r\n\t</tr>\r\n\t</table>\r\n\t<div class=\"cmd-wrapper\" style=\"text-align:right;margin-right:4px\">\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link close-roujin\">閉じる</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link edit-roujin\">編集</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link delete-roujin\">削除</a>\r\n\t</div>\r\n</div>\r\n"
+	module.exports = "<div class=\"roujin-detail\" data-roujin-id=\"{{roujin_id}}\">\r\n\t<table>\r\n\t<tr>\r\n\t\t<td>市町村番号</td>\r\n\t\t<td>{{shichouson}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t\t<td>受給者番号</td>\r\n\t\t<td>{{jukyuusha}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>負担割</td>\r\n\t    <td>{{futan_wari}}割</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（から）</td>\r\n\t    <td>{{valid_from_as_kanji}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（まで）</td>\r\n\t    <td>{{valid_upto_as_kanji}}</td>\r\n\t</tr>\r\n\t</table>\r\n\t<div class=\"cmd-wrapper\" style=\"text-align:right;margin-right:4px\">\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link close-roujin\">閉じる</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link edit-roujin\">編集</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link delete-roujin\">削除</a>\r\n\t</div>\r\n</div>\r\n"
 
 /***/ },
 /* 165 */
 /***/ function(module, exports) {
 
-	module.exports = "<div>\r\n\t<div style=\"font-weight:bold\">{{last_name}} {{first_name}}</div>\r\n\t<div class=\"error\" style=\"display:none\"></div>\r\n    <form onsubmit=\"return false;\">\r\n        <table>\r\n            <tr>\r\n                <td><label for=\"shichouson\">市町村番号</label></td>\r\n                <td><input name=\"shichouson\" value=\"{{shichouson}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"jukyuusha\">受給者番号</label></td>\r\n                <td><input name=\"jukyuusha\" value=\"{{jukyuusha}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"futan_wari\">負担割合</label></td>\r\n                <td>\r\n                    <input type=\"radio\" name=\"futan_wari\" value=\"1\"/>1割\r\n                    <input type=\"radio\" name=\"futan_wari\" value=\"2\"/>2割\r\n                    <input type=\"radio\" name=\"futan_wari\" value=\"3\"/>3割\r\n                </td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_from\">有効期限（から）</label></td>\r\n                <td class=\"valid-from-element\">{{> date-input}}</td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_upto\">有効期限（まで）</label></td>\r\n                <td class=\"valid-upto-element\">{{> date-input}}</td>\r\n            </tr>\r\n        </table>\r\n    </form>\r\n    <div>\r\n        <button class=\"enter\">入力</button>\r\n        <button class=\"cancel\">キャンセル</button>\r\n    </div>\r\n</div>\r\n"
+	module.exports = "<div class=\"roujin-form\" data-roujin-id=\"{{roujin_id}}\">\r\n\t<div style=\"font-weight:bold\">{{last_name}} {{first_name}}</div>\r\n\t<div class=\"error\" style=\"display:none\"></div>\r\n    <form onsubmit=\"return false;\">\r\n        <table>\r\n            <tr>\r\n                <td><label for=\"shichouson\">市町村番号</label></td>\r\n                <td><input name=\"shichouson\" value=\"{{shichouson}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"jukyuusha\">受給者番号</label></td>\r\n                <td><input name=\"jukyuusha\" value=\"{{jukyuusha}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"futan_wari\">負担割合</label></td>\r\n                <td>\r\n                    <input type=\"radio\" name=\"futan_wari\" value=\"1\"/>1割\r\n                    <input type=\"radio\" name=\"futan_wari\" value=\"2\"/>2割\r\n                    <input type=\"radio\" name=\"futan_wari\" value=\"3\"/>3割\r\n                </td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_from\">有効期限（から）</label></td>\r\n                <td class=\"valid-from-element\">{{> date-input}}</td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_upto\">有効期限（まで）</label></td>\r\n                <td class=\"valid-upto-element\">{{> date-input}}</td>\r\n            </tr>\r\n        </table>\r\n    </form>\r\n    <div>\r\n        <button class=\"enter\">入力</button>\r\n        <button class=\"cancel\">キャンセル</button>\r\n    </div>\r\n</div>\r\n"
 
 /***/ },
 /* 166 */
