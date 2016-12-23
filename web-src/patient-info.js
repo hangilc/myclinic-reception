@@ -24,10 +24,7 @@ exports.add = function(data){
 	var title = "患者情報（" + patient.last_name + patient.first_name + "）";
 	Panel.add(title, function(dom, wrapper){
 		dom.innerHTML = tmplSrc;
-		sub = Subpanel.create("基本情報", function(subdom){
-			BasicInfo.render(subdom, patient);
-		});
-		dom.querySelector(".basic-info-wrapper").appendChild(sub);
+		BasicInfo.setup(dom.querySelector(".basic-info-wrapper"), patient);
 		ShahokokuhoArea.setup(dom.querySelector(".shahokokuho-wrapper"), hoken.shahokokuho_list, patient);
 		KoukikoureiArea.setup(dom.querySelector(".koukikourei-wrapper"), hoken.koukikourei_list, patient);
 		RoujinArea.setup(dom.querySelector(".roujin-wrapper"), hoken.roujin_list, patient);

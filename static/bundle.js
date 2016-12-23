@@ -18107,10 +18107,7 @@
 		var title = "患者情報（" + patient.last_name + patient.first_name + "）";
 		Panel.add(title, function(dom, wrapper){
 			dom.innerHTML = tmplSrc;
-			sub = Subpanel.create("基本情報", function(subdom){
-				BasicInfo.render(subdom, patient);
-			});
-			dom.querySelector(".basic-info-wrapper").appendChild(sub);
+			BasicInfo.setup(dom.querySelector(".basic-info-wrapper"), patient);
 			ShahokokuhoArea.setup(dom.querySelector(".shahokokuho-wrapper"), hoken.shahokokuho_list, patient);
 			KoukikoureiArea.setup(dom.querySelector(".koukikourei-wrapper"), hoken.koukikourei_list, patient);
 			RoujinArea.setup(dom.querySelector(".roujin-wrapper"), hoken.roujin_list, patient);
@@ -18347,30 +18344,51 @@
 /* 132 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var hogan = __webpack_require__(2);
-	var tmplSrc = __webpack_require__(133);
-	var tmpl = hogan.compile(tmplSrc);
-	var Util = __webpack_require__(14);
+	"use strict";
 
-	exports.render = function(dom, patient){
+	var hogan = __webpack_require__(2);
+	var dispTmplSrc = __webpack_require__(133);
+	var dispTmpl = hogan.compile(dispTmplSrc);
+	var rUtil = __webpack_require__(14);
+	var Subpanel = __webpack_require__(130);
+	var Form = __webpack_require__(168);
+
+	exports.setup = function(wrapper, patient){
+		var sub = Subpanel.create("基本情報", function(subdom){
+			subdom.appendChild(createDisp(patient));
+		});
+		wrapper.appendChild(sub);
+	};
+
+	function createDisp(patient){
 		var data = {
-			birth_day_as_kanji: Util.birthdayAsKanji(patient.birth_day),
-			age: Util.calcAge(patient.birth_day),
-			sex_as_kanji: Util.sexAsKanji(patient.sex)
+			birth_day_as_kanji: rUtil.birthdayAsKanji(patient.birth_day),
+			age: rUtil.calcAge(patient.birth_day),
+			sex_as_kanji: rUtil.sexAsKanji(patient.sex)
 		};
 		Object.keys(patient).forEach(function(key){
 			data[key] = patient[key];
 		});
-		var html = tmpl.render(data);
-		dom.innerHTML = html;
+		var html = dispTmpl.render(data);
+		var dom = rUtil.makeNode(html);
+		dom.querySelector(".edit-basic").addEventListener("click", function(){
+			var form = Form.create(patient, {
+
+			});
+			form.classList.add("form-wrapper");
+			dom.style.display = "none";
+			dom.parentNode.insertBefore(form, dom);
+		});
+		return dom;
 	};
+
 
 
 /***/ },
 /* 133 */
 /***/ function(module, exports) {
 
-	module.exports = "\r\n<table>\r\n<tr>\r\n\t<td>患者番号</td>\r\n\t<td>{{patient_id}}</td>\r\n</tr>\r\n<tr>\r\n\t<td>名前</td>\r\n\t<td>{{last_name}} {{first_name}}</td>\r\n</tr>\r\n<tr>\r\n\t<td>よみ</td>\r\n\t<td>{{last_name_yomi}} {{first_name_yomi}}</td>\r\n</tr>\r\n<tr>\r\n\t<td>生年月日</td>\r\n\t<td>{{birth_day_as_kanji}} （{{age}}才）</td>\r\n</tr>\r\n<tr>\r\n\t<td>性別</td>\r\n\t<td>{{sex_as_kanji}}</td>\r\n</tr>\r\n<tr>\r\n\t<td>住所</td>\r\n\t<td>{{address}}</td>\r\n</tr>\r\n<tr>\r\n\t<td>電話</td>\r\n\t<td>{{phone}}</td>\r\n</tr>\r\n</table>\r\n<div class=\"cmd-wrapper\" style=\"text-align:right;margin-right:4px\">\r\n\t<a href=\"javascript:void(0)\" class=\"cmd-link edit-basic\">編集</a>\r\n</div>\r\n"
+	module.exports = "<div>\r\n\t<table>\r\n\t<tr>\r\n\t\t<td>患者番号</td>\r\n\t\t<td>{{patient_id}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t\t<td>名前</td>\r\n\t\t<td>{{last_name}} {{first_name}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t\t<td>よみ</td>\r\n\t\t<td>{{last_name_yomi}} {{first_name_yomi}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t\t<td>生年月日</td>\r\n\t\t<td>{{birth_day_as_kanji}} （{{age}}才）</td>\r\n\t</tr>\r\n\t<tr>\r\n\t\t<td>性別</td>\r\n\t\t<td>{{sex_as_kanji}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t\t<td>住所</td>\r\n\t\t<td>{{address}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t\t<td>電話</td>\r\n\t\t<td>{{phone}}</td>\r\n\t</tr>\r\n\t</table>\r\n\t<div class=\"cmd-wrapper\" style=\"text-align:right;margin-right:4px\">\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link edit-basic\">編集</a>\r\n\t</div>\r\n</div>\r\n"
 
 /***/ },
 /* 134 */
@@ -20149,6 +20167,37 @@
 /***/ function(module, exports) {
 
 	module.exports = "<div data-kouhi-id=\"{{kouhi_id}}\">\r\n\t<table>\r\n\t<tr>\r\n\t    <td>種類</td>\r\n\t    <td>{{rep}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>負担者番号</td>\r\n\t    <td>{{futansha}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>受給者番号</td>\r\n\t    <td>{{jukyuusha}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（から）</td>\r\n\t    <td>{{valid_from_as_kanji}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（まで）</td>\r\n\t    <td>{{valid_upto_as_kanji}}</td>\r\n\t</tr>\r\n\t</table>\r\n\t<div class=\"cmd-wrapper\" style=\"text-align:right;margin-right:4px\">\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link close-kouhi\">閉じる</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link edit-kouhi\">編集</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link delete-kouhi\">削除</a>\r\n\t</div>\r\n</div>\r\n"
+
+/***/ },
+/* 168 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	var hogan = __webpack_require__(2);
+	var tmplSrc = __webpack_require__(169);
+	var tmpl = hogan.compile(tmplSrc);
+	var rUtil = __webpack_require__(14);
+
+	exports.create = function(patient, callbacks){
+		var data = {
+
+		};
+		Object.keys(patient).forEach(function(key){
+			data[key] = patient[key];
+		});
+		var html = tmpl.render(data);
+		var dom = rUtil.makeNode(html);
+
+		return dom;
+	};
+
+
+/***/ },
+/* 169 */
+/***/ function(module, exports) {
+
+	module.exports = "<div class=\"patient-form\">\r\n\t<div class=\"error\" style=\"display:none\"></div>\r\n\t<form onsubmit=\"return false;\">\r\n\t\t<table width=\"100%\">\r\n\t\t\t{{#patient_id}}\r\n\t\t\t<tr>\r\n\t\t\t\t<td style=\"white-space:nowrap\">患者番号</td>\r\n\t\t\t\t<td>{{patient_id}}</td>\r\n\t\t\t</tr>\r\n\t\t\t{{/patient_id}}\r\n\t\t\t<tr>\r\n\t\t\t\t<td>名前</td>\r\n\t\t\t\t<td>\r\n\t\t\t\t\t<input name=\"last_name\" value=\"{{last_name}}\" style=\"width:6em\"/> \r\n\t\t\t\t\t<input name=\"first_name\" value=\"{{first_name}}\" style=\"width:6em\"/>\r\n\t\t\t\t</td>\r\n\t\t\t</tr>\r\n\t\t\t<tr>\r\n\t\t\t\t<td>よみ</td>\r\n\t\t\t\t<td>\r\n\t\t\t\t\t<input name=\"last_name_yomi\" value=\"{{last_name_yomi}}\" style=\"width:6em\"/> \r\n\t\t\t\t\t<input name=\"first_name_yomi\" value=\"{{first_name_yomi}}\" style=\"width:6em\"/>\r\n\t\t\t\t</td>\r\n\t\t\t</tr>\r\n\t\t\t<tr>\r\n\t\t\t\t<td style=\"white-space:nowrap\"><label for=\"birth_day\">生年月日</label></td>\r\n\t\t\t\t<td class=\"birth-day-element\"></td>\r\n\t\t\t</tr>\r\n\t\t\t<tr>\r\n\t\t\t\t<td><label for=\"sex\">性別</label></td>\r\n\t\t\t\t<td><input type=\"radio\" name=\"sex\" value=\"M\"/>男 \r\n\t\t\t\t\t<input type=\"radio\" name=\"sex\" value=\"F\"/>女</td>\r\n\t\t\t</tr>\r\n\t\t\t<tr>\r\n\t\t\t\t<td><label for=\"address\">住所</label></td>\r\n\t\t\t\t<td><input name=\"address\" style=\"width:20em\" value=\"{{address}}\"/></td>\r\n\t\t\t</tr>\r\n\t\t\t<tr>\r\n\t\t\t\t<td><label for=\"phone\">電話</label></td>\r\n\t\t\t\t<td><input name=\"phone\" value=\"{{phone}}\"/></td>\r\n\t\t\t</tr>\r\n\t\t</table>\r\n\t</form>\r\n\t<div>\r\n\t\t<button class=\"enter\">入力</button>\r\n\t\t<button class=\"cancel\">キャンセル</button>\r\n\t</div>\r\n</div>\r\n"
 
 /***/ }
 /******/ ]);
