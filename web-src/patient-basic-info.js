@@ -27,9 +27,16 @@ function createDisp(patient){
 	var dom = rUtil.makeNode(html);
 	dom.querySelector(".edit-basic").addEventListener("click", function(){
 		var form = Form.create(patient, {
-
+			onEnter: function(values){
+				console.log("VALUES", values);
+			},
+			onCancel: function(){
+				rUtil.removeNode(form);
+				dom.style.display = savedDomStyleDisplay;
+			}
 		});
 		form.classList.add("form-wrapper");
+		var savedDomStyleDisplay = dom.style.display;
 		dom.style.display = "none";
 		dom.parentNode.insertBefore(form, dom);
 	});

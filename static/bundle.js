@@ -18086,16 +18086,16 @@
 	var hogan = __webpack_require__(2);
 	var Util = __webpack_require__(14);
 	var BasicInfo = __webpack_require__(132);
-	var mUtil = __webpack_require__(134);
-	var ShahokokuhoArea = __webpack_require__(135);
-	var KoukikoureiArea = __webpack_require__(144);
-	var RoujinArea = __webpack_require__(147);
-	var KouhiArea = __webpack_require__(150);
-	var CommandBox = __webpack_require__(153);
-	var ShahokokuhoForm = __webpack_require__(138);
-	var KoukikoureiForm = __webpack_require__(155);
-	var KouhiForm = __webpack_require__(157);
-	var tmplSrc = __webpack_require__(159);
+	var mUtil = __webpack_require__(136);
+	var ShahokokuhoArea = __webpack_require__(137);
+	var KoukikoureiArea = __webpack_require__(146);
+	var RoujinArea = __webpack_require__(153);
+	var KouhiArea = __webpack_require__(160);
+	var CommandBox = __webpack_require__(167);
+	var ShahokokuhoForm = __webpack_require__(140);
+	var KoukikoureiForm = __webpack_require__(151);
+	var KouhiForm = __webpack_require__(165);
+	var tmplSrc = __webpack_require__(169);
 	var conti = __webpack_require__(10);
 	var service = __webpack_require__(7);
 	var rUtil = __webpack_require__(14);
@@ -18351,7 +18351,7 @@
 	var dispTmpl = hogan.compile(dispTmplSrc);
 	var rUtil = __webpack_require__(14);
 	var Subpanel = __webpack_require__(130);
-	var Form = __webpack_require__(168);
+	var Form = __webpack_require__(134);
 
 	exports.setup = function(wrapper, patient){
 		var sub = Subpanel.create("基本情報", function(subdom){
@@ -18373,9 +18373,16 @@
 		var dom = rUtil.makeNode(html);
 		dom.querySelector(".edit-basic").addEventListener("click", function(){
 			var form = Form.create(patient, {
-
+				onEnter: function(values){
+					console.log("VALUES", values);
+				},
+				onCancel: function(){
+					rUtil.removeNode(form);
+					dom.style.display = savedDomStyleDisplay;
+				}
 			});
 			form.classList.add("form-wrapper");
+			var savedDomStyleDisplay = dom.style.display;
 			dom.style.display = "none";
 			dom.parentNode.insertBefore(form, dom);
 		});
@@ -18392,6 +18399,126 @@
 
 /***/ },
 /* 134 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	var hogan = __webpack_require__(2);
+	var tmplSrc = __webpack_require__(135);
+	var tmpl = hogan.compile(tmplSrc);
+	var rUtil = __webpack_require__(14);
+	var dateInputTmplSrc = __webpack_require__(142);
+	var dateInputTmpl = hogan.compile(dateInputTmplSrc);
+	var DateInput = __webpack_require__(143);
+
+	exports.create = function(patient, callbacks){
+		var data = {
+
+		};
+		Object.keys(patient).forEach(function(key){
+			data[key] = patient[key];
+		});
+		var html = tmpl.render(data, {
+			"date-input": dateInputTmpl	
+		});
+		var dom = rUtil.makeNode(html);
+		if( patient.birth_day && patient.birth_day !== "0000-00-00" ){
+			var dateInput = new DateInput(dom.querySelector(".birth-day-element"));		
+			dateInput.set(patient.birth_day);
+		}
+		dom.querySelector(".enter").addEventListener("click", function(){
+			var errs = [];
+			var values = getValues(dom, errs);
+			if( errs.length > 0 ){
+				setError(dom, errs);
+			} else {
+				callbacks.onEnter(values);
+			}
+		});
+		dom.querySelector(".cancel").addEventListener("click", function(){
+			callbacks.onCancel();
+		});
+		setSex(dom, patient.sex || "F");
+		return dom;
+	};
+
+	function setSex(dom, sex){
+		dom.querySelector("input[type='radio'][name='sex'][value='" + sex + "']").checked = true;
+	}
+
+	function getOptionalField(dom, errs, seltor, name){
+		return dom.querySelector(seltor).value;
+	}
+
+	function getRequiredField(dom, errs, seltor, name){
+		var value = dom.querySelector(seltor).value;
+		if( value === "" ){
+			var msg = name + "が入力されていません。";	
+			errs.push(msg);
+		}
+		return value;
+	}
+
+	function getValidDateField(dom, errs, seltor, name){
+		var dateInput = new DateInput(dom);
+		var value = dateInput.getSqlDate();
+		if( value === "0000-00-00" ){
+			errs.push(name + "が入力されていません。");
+		} else if( dateInput.errors.length > 0 ){
+			var msg = name + "の入力が不適切です。";
+			msg += "（" + dateInput.errors.join("") + "）";
+			errs.push(msg);
+		}
+		return value;
+	}
+
+	function getOneOfField(dom, errs, seltor, name, choices){
+		var value = getRequiredField(dom, errs, seltor, name);
+		if( !value ){
+			return null;
+		}
+		if( choices.indexOf(value) < 0 ){
+			errs.push(name + "の入力が不適切です。");
+			return null;
+		}
+		return value;
+	}
+
+	function getValues(dom, errs){
+		return {
+			last_name: getRequiredField(dom, errs, "input[name='last_name']", "姓"),
+			first_name: getRequiredField(dom, errs, "input[name='first_name']", "名"),
+			last_name_yomi: getRequiredField(dom, errs, "input[name='last_name_yomi']", "姓のよみ"),
+			first_name_yomi: getRequiredField(dom, errs, "input[name='first_name_yomi']", "名のよみ"),
+			birth_day: getValidDateField(dom, errs, "birth-day-element", "生年月日"),
+			sex: getOneOfField(dom, errs, "input[type='radio'][name='sex']:checked", "性別", ["M", "F"]),
+			address: getOptionalField(dom, errs, "input[name='address']", "住所"),
+			phone: getOptionalField(dom, errs, "input[name='phone']", "電話番号"),
+		};
+	}
+
+	function setError(dom, errs){
+		var box = dom.querySelector(".error");
+		box.innerHTML = "";
+		errs.forEach(function(err){
+			var d = document.createElement("div");
+			var t = document.createTextNode(err);
+			d.appendChild(t);
+			box.appendChild(d);
+		});
+		box.style.display = "block";
+	}
+
+
+
+/***/ },
+/* 135 */
+/***/ function(module, exports) {
+
+	module.exports = "<div class=\"patient-form\">\r\n\t<div class=\"error\" style=\"display:none\"></div>\r\n\t<form onsubmit=\"return false;\">\r\n\t\t<table width=\"100%\">\r\n\t\t\t{{#patient_id}}\r\n\t\t\t<tr>\r\n\t\t\t\t<td style=\"white-space:nowrap\">患者番号</td>\r\n\t\t\t\t<td>{{patient_id}}</td>\r\n\t\t\t</tr>\r\n\t\t\t{{/patient_id}}\r\n\t\t\t<tr>\r\n\t\t\t\t<td>名前</td>\r\n\t\t\t\t<td>\r\n\t\t\t\t\t<input name=\"last_name\" value=\"{{last_name}}\" style=\"width:6em\"/> \r\n\t\t\t\t\t<input name=\"first_name\" value=\"{{first_name}}\" style=\"width:6em\"/>\r\n\t\t\t\t</td>\r\n\t\t\t</tr>\r\n\t\t\t<tr>\r\n\t\t\t\t<td>よみ</td>\r\n\t\t\t\t<td>\r\n\t\t\t\t\t<input name=\"last_name_yomi\" value=\"{{last_name_yomi}}\" style=\"width:6em\"/> \r\n\t\t\t\t\t<input name=\"first_name_yomi\" value=\"{{first_name_yomi}}\" style=\"width:6em\"/>\r\n\t\t\t\t</td>\r\n\t\t\t</tr>\r\n\t\t\t<tr>\r\n\t\t\t\t<td style=\"white-space:nowrap\"><label for=\"birth_day\">生年月日</label></td>\r\n\t\t\t\t<td class=\"birth-day-element\">{{> date-input}}</td>\r\n\t\t\t</tr>\r\n\t\t\t<tr>\r\n\t\t\t\t<td><label for=\"sex\">性別</label></td>\r\n\t\t\t\t<td><input type=\"radio\" name=\"sex\" value=\"M\"/>男 \r\n\t\t\t\t\t<input type=\"radio\" name=\"sex\" value=\"F\"/>女</td>\r\n\t\t\t</tr>\r\n\t\t\t<tr>\r\n\t\t\t\t<td><label for=\"address\">住所</label></td>\r\n\t\t\t\t<td><input name=\"address\" style=\"width:20em\" value=\"{{address}}\"/></td>\r\n\t\t\t</tr>\r\n\t\t\t<tr>\r\n\t\t\t\t<td><label for=\"phone\">電話</label></td>\r\n\t\t\t\t<td><input name=\"phone\" value=\"{{phone}}\"/></td>\r\n\t\t\t</tr>\r\n\t\t</table>\r\n\t</form>\r\n\t<div>\r\n\t\t<button class=\"enter\">入力</button>\r\n\t\t<button class=\"cancel\">キャンセル</button>\r\n\t</div>\r\n</div>\r\n"
+
+/***/ },
+/* 136 */
 /***/ function(module, exports) {
 
 	
@@ -18473,12 +18600,12 @@
 
 
 /***/ },
-/* 135 */
+/* 137 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var Disp = __webpack_require__(136);
+	var Disp = __webpack_require__(138);
 	var Subpanel = __webpack_require__(130);
 	var rUtil = __webpack_require__(14);
 
@@ -18545,18 +18672,18 @@
 
 
 /***/ },
-/* 136 */
+/* 138 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var hogan = __webpack_require__(2);
-	var tmplSrc = __webpack_require__(137);
+	var tmplSrc = __webpack_require__(139);
 	var tmpl = hogan.compile(tmplSrc);
-	var mUtil = __webpack_require__(134);
+	var mUtil = __webpack_require__(136);
 	var rUtil = __webpack_require__(14);
-	var ShahokokuhoForm = __webpack_require__(138);
+	var ShahokokuhoForm = __webpack_require__(140);
 	var conti = __webpack_require__(10);
 	var service = __webpack_require__(7);
-	var Detail = __webpack_require__(142);
+	var Detail = __webpack_require__(144);
 
 	exports.create = function(shahokokuho, patient){
 		var rep = mUtil.shahokokuhoRep(shahokokuho.hokensha_bangou);
@@ -18654,23 +18781,23 @@
 
 
 /***/ },
-/* 137 */
+/* 139 */
 /***/ function(module, exports) {
 
 	module.exports = "<div class=\"shahokokuho-disp\" data-shahokokuho-id=\"{{shahokokuho_id}}\">\r\n\t{{label}}\r\n\t<a href=\"javascript:void(0)\" class=\"detail\">詳細</a>\r\n</div>\r\n\r\n"
 
 /***/ },
-/* 138 */
+/* 140 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 
 	var hogan = __webpack_require__(2);
-	var tmplSrc = __webpack_require__(139);
+	var tmplSrc = __webpack_require__(141);
 	var tmpl = hogan.compile(tmplSrc);
-	var dateInputTmplSrc = __webpack_require__(140);
+	var dateInputTmplSrc = __webpack_require__(142);
 	var dateInputTmpl = hogan.compile(dateInputTmplSrc);
-	var DateInput = __webpack_require__(141);
+	var DateInput = __webpack_require__(143);
 	var conti = __webpack_require__(10);
 	var service = __webpack_require__(7);
 	var rUtil = __webpack_require__(14);
@@ -18821,19 +18948,19 @@
 
 
 /***/ },
-/* 139 */
+/* 141 */
 /***/ function(module, exports) {
 
 	module.exports = "<div data-shahokokuho-id=\"{{shahokokuho_id}}\">\r\n\t<div style=\"font-weight:bold\">{{last_name}} {{first_name}}</div>\r\n\t<div class=\"error\" style=\"display:none\"></div>\r\n    <form onsubmit=\"return false\" class=\"shahokokuho-form\">\r\n        <table>\r\n            <tr>\r\n                <td><label for=\"hokensha_bangou\">保険者番号</label></td>\r\n                <td><input name=\"hokensha_bangou\" value=\"{{hokensha_bangou}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"hihokensha_kigou\">被保険者記号</label></td>\r\n                <td><input name=\"hihokensha_kigou\" value=\"{{hihokensha_kigou}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"hihokensha_bangou\">被保険者番号</label></td>\r\n                <td><input name=\"hihokensha_bangou\" value=\"{{hihokensha_bangou}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"honnin\">本人・家族</label></td>\r\n                <td><input type=\"radio\" name=\"honnin\" value=\"1\" {{#honnin}}checked{{/honnin}}/>本人\r\n                    <input type=\"radio\" name=\"honnin\" value=\"0\" {{^honnin}}checked{{/honnin}}/>家族</td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_from\">有効期限（から）</label></td>\r\n                <td class=\"valid-from-element\">{{> date-input}}</td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_upto\">有効期限（まで）</label></td>\r\n                <td class=\"valid-upto-element\">{{> date-input}}</td>\r\n            </tr>\r\n            <tr valign=\"top\">\r\n                <td><label for=\"kourei\">高齢</label></td>\r\n                <td>\r\n                    <span style=\"white-space: nowrap\"><input type=\"radio\" name=\"kourei\" value=\"0\"/>高齢でない</span><br class=\"kourei-br\"/>\r\n                    <span style=\"white-space: nowrap\"><input type=\"radio\" name=\"kourei\" value=\"1\"/>１割</span>\r\n                    <span style=\"white-space: nowrap\"><input type=\"radio\" name=\"kourei\" value=\"2\"/>２割</span>\r\n                    <span style=\"white-space: nowrap\"><input type=\"radio\" name=\"kourei\" value=\"3\"/>３割</span>\r\n                </td>\r\n            </tr>\r\n        </table>\r\n\t    <div>\r\n\t        <button class=\"enter\">入力</button>\r\n\t        <button class=\"cancel\">キャンセル</button>\r\n\t    </div>\r\n    </form>\r\n</div>\r\n"
 
 /***/ },
-/* 140 */
+/* 142 */
 /***/ function(module, exports) {
 
 	module.exports = "<select name=\"gengou\">\r\n\t<option value=\"明治\">明治</option>\r\n\t<option value=\"大正\">大正</option>\r\n\t<option value=\"昭和\">昭和</option>\r\n\t<option value=\"平成\">平成</option>\r\n\t<option value=\"西暦\">西暦</option>\r\n</select>\r\n<input name=\"nen\" style=\"width:2em\"/>年\r\n<input name=\"month\" style=\"width:2em\"/>月\r\n<input name=\"day\" style=\"width:2em\"/>日\r\n"
 
 /***/ },
-/* 141 */
+/* 143 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var kanjidate = __webpack_require__(15);
@@ -18951,13 +19078,13 @@
 
 
 /***/ },
-/* 142 */
+/* 144 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var hogan = __webpack_require__(2);
-	var tmplSrc = __webpack_require__(143);
+	var tmplSrc = __webpack_require__(145);
 	var tmpl = hogan.compile(tmplSrc);
-	var mUtil = __webpack_require__(134);
+	var mUtil = __webpack_require__(136);
 	var kanjidate = __webpack_require__(15);
 	var rUtil = __webpack_require__(14);
 
@@ -19012,18 +19139,18 @@
 
 
 /***/ },
-/* 143 */
+/* 145 */
 /***/ function(module, exports) {
 
 	module.exports = "<div data-shahokokuho-id=\"{{shahokokuho_id}}\">\r\n    <table>\r\n    <tr>\r\n        <td>種類</td>\r\n        <td>{{rep}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>保険者番号</td>\r\n        <td>{{hokensha_bangou}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>被保険者記号</td>\r\n        <td>{{hihokensha_kigou}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>被保険者番号</td>\r\n        <td>{{hihokensha_bangou}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>本人・家族</td>\r\n        <td>{{honnin_as_kanji}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>有効期限（から）</td>\r\n        <td>{{valid_from_as_kanji}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>有効期限（まで）</td>\r\n        <td>{{valid_upto_as_kanji}}</td>\r\n    </tr>\r\n    <tr>\r\n        <td>高齢</td>\r\n        <td>{{kourei_as_kanji}}</td>\r\n    </tr>\r\n    </table>\r\n    <div class=\"cmd-wrapper\" style=\"text-align:right;margin-right:4px\">\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link close\">閉じる</a> |\r\n        <a href=\"javascript:void(0)\" class=\"cmd-link edit\">編集</a> |\r\n        <a href=\"javascript:void(0)\" class=\"cmd-link delete\">削除</a>\r\n    </div>\r\n</div>\r\n"
 
 /***/ },
-/* 144 */
+/* 146 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var Disp = __webpack_require__(145);
+	var Disp = __webpack_require__(147);
 	var Subpanel = __webpack_require__(130);
 	var rUtil = __webpack_require__(14);
 
@@ -19075,18 +19202,18 @@
 
 
 /***/ },
-/* 145 */
+/* 147 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 
 	var hogan = __webpack_require__(2);
-	var tmplSrc = __webpack_require__(146);
+	var tmplSrc = __webpack_require__(148);
 	var tmpl = hogan.compile(tmplSrc);
-	var mUtil = __webpack_require__(134);
+	var mUtil = __webpack_require__(136);
 	var rUtil = __webpack_require__(14);
-	var Detail = __webpack_require__(160);
-	var Form = __webpack_require__(155);
+	var Detail = __webpack_require__(149);
+	var Form = __webpack_require__(151);
 	var service = __webpack_require__(7);
 	var conti = __webpack_require__(10);
 
@@ -19187,244 +19314,52 @@
 
 
 /***/ },
-/* 146 */
+/* 148 */
 /***/ function(module, exports) {
 
 	module.exports = "<div class=\"koukikourei-disp\" data-koukikourei-id=\"{{koukikourei_id}}\">\r\n\t{{label}}\r\n\t<a href=\"javascript:void(0)\" class=\"detail\">詳細</a>\r\n</div>\r\n\r\n\r\n"
 
 /***/ },
-/* 147 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-
-	var Disp = __webpack_require__(148);
-	var Subpanel = __webpack_require__(130);
-	var rUtil = __webpack_require__(14);
-
-	exports.setup = function(wrapper, hoken_list, patient){
-		var sub = Subpanel.create("老人保険", function(subdom){
-			hoken_list.forEach(function(hoken){
-				var disp = Disp.create(hoken, patient);
-				subdom.appendChild(disp);
-			});
-
-			subdom.classList.add("listening-to-roujin-entered");
-
-			subdom.addEventListener("roujin-entered", function(event){
-				var hoken = event.detail;
-				if( hoken.patient_id !== patient.patient_id ){
-					return;
-				}
-				var node = Disp.create(hoken, patient);
-				subdom.appendChild(node);
-				if( sub.style.display === "none" ){
-					sub.style.display = "block";
-				}
-			});
-
-			subdom.classList.add("listening-to-roujin-deleted");
-
-			subdom.addEventListener("roujin-deleted", function(event){
-				var roujin = event.detail;
-				if( roujin.patient_id !== patient.patient_id ){
-					return;
-				}
-				var relNodes = subdom.querySelectorAll("*[data-roujin-id='" + roujin.roujin_id + "']");
-				var i, n;
-				n = relNodes.length;
-				for(i=0;i<n;i++){
-					rUtil.removeNode(relNodes.item(i));
-				}
-				var nodes = subdom.querySelectorAll(".roujin-disp");
-				if( nodes.length === 0 ){
-					sub.style.display = "none";
-				}
-			});
-		});
-		if( hoken_list.length === 0 ){
-			sub.style.display = "none";
-		}
-		wrapper.append(sub);
-	};
-
-
-
-/***/ },
-/* 148 */
+/* 149 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var hogan = __webpack_require__(2);
-	var tmplSrc = __webpack_require__(149);
+	var tmplSrc = __webpack_require__(150);
 	var tmpl = hogan.compile(tmplSrc);
-	var mUtil = __webpack_require__(134);
 	var rUtil = __webpack_require__(14);
-	var Detail = __webpack_require__(162);
-	var Form = __webpack_require__(163);
-	var service = __webpack_require__(7);
-	var conti = __webpack_require__(10);
 
-	exports.create = function(roujin, patient){
-		var rep = "老人（" + roujin.futan_wari + "割）";
+	exports.create = function(koukikourei, patient, callbacks){
 		var data = {
-			label: rep
+			valid_from_as_kanji: rUtil.validFromAsKanji(koukikourei.valid_from),
+			valid_upto_as_kanji: rUtil.validUptoAsKanji(koukikourei.valid_upto)
 		};
-		Object.keys(roujin).forEach(function(key){
-			data[key] = roujin[key];
+		Object.keys(koukikourei).forEach(function(key){
+			data[key] = koukikourei[key];
 		});
 		var html = tmpl.render(data);
 		var dom = rUtil.makeNode(html);
-		bindDetail(dom, roujin, patient);
+		linkCallbacks(dom, callbacks);
 		return dom;
-	}
+	};
 
-	function bindDetail(dom, roujin, patient){
-		dom.querySelector(".detail").addEventListener("click", function(){
-			var detail = Detail.create(roujin, patient, {
-				onClose: function(){
-					rUtil.removeNode(detail);
-					dom.style.display = "block";	
-				},
-				onEdit: function(){
-					rUtil.removeNode(detail);
-					doEdit(dom, roujin, patient);
-				},
-				onDelete: function(){
-					doDelete(dom, detail, roujin);
-				}
-			});
-			detail.classList.add("form-wrapper");
-			dom.style.display = "none";
-			dom.parentNode.insertBefore(detail, dom);
+	function linkCallbacks(dom, callbacks){
+		dom.querySelector(".close-koukikourei").addEventListener("click", function(){
+			callbacks.onClose();
+		});
+		dom.querySelector(".edit-koukikourei").addEventListener("click", function(){
+			callbacks.onEdit();
+		});
+		dom.querySelector(".delete-koukikourei").addEventListener("click", function(){
+			callbacks.onDelete();
 		});
 	}
 
-	function doEdit(disp, roujin, patient){
-		var data = {
-			roujin: roujin,
-			patient: patient
-		};
-		var form = Form.create(data, {
-			onEnter: function(values){
-				values.roujin_id = roujin.roujin_id;
-				values.patient_id = patient.patient_id;
-				var updatedRoujin;
-				conti.exec([
-					function(done){
-						service.updateRoujin(values, done);	
-					},
-					function(done){
-						service.getRoujin(values.roujin_id, function(err, result){
-							if( err ){
-								done(err);
-								return;
-							}
-							updatedRoujin = result;
-							done();
-						});
-					}
-				], function(err){
-					if( err ){
-						alert(err);
-						return;
-					}
-					var newDisp = exports.create(updatedRoujin, patient);
-					rUtil.removeNode(form);
-					disp.parentNode.replaceChild(newDisp, disp);
-				});
-			},
-			onCancel: function(){
-				rUtil.removeNode(form);
-				disp.style.display = "block";
-			}
-		});
-		form.classList.add("form-wrapper");
-		disp.parentNode.insertBefore(form, disp);
-	}
-
-	function doDelete(disp, detail, roujin){
-		if( !confirm("この老人保険を削除していいですか？") ){
-			return;
-		}
-		service.deleteRoujin(roujin.roujin_id, function(err){
-			if( err ){
-				alert(err);
-				return;
-			}
-			var e = new CustomEvent("broadcast-roujin-deleted", {
-				bubbles: true,
-				detail: roujin
-			});
-			disp.dispatchEvent(e);
-		});
-	}
-
-
-/***/ },
-/* 149 */
-/***/ function(module, exports) {
-
-	module.exports = "<div class=\"roujin-disp\" data-roujin-id=\"{{roujin_id}}\">\r\n\t{{label}}\r\n\t<a href=\"javascript:void(0)\" class=\"detail\">詳細</a>\r\n</div>\r\n\r\n\r\n"
 
 /***/ },
 /* 150 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
-	"use strict";
-
-	var Disp = __webpack_require__(151);
-	var Subpanel = __webpack_require__(130);
-	var rUtil = __webpack_require__(14);
-
-	exports.setup = function(wrapper, hoken_list, patient){
-		var sub = Subpanel.create("公費", function(subdom){
-			hoken_list.forEach(function(hoken){
-				var disp = Disp.create(hoken, patient);
-				subdom.appendChild(disp);
-			});
-
-			subdom.classList.add("listening-to-kouhi-entered");
-
-			subdom.addEventListener("kouhi-entered", function(event){
-				var hoken = event.detail;
-				if( hoken.patient_id !== patient.patient_id ){
-					return;
-				}
-				var node = Disp.create(hoken, patient);
-				subdom.appendChild(node);
-				if( sub.style.display === "none" ){
-					sub.style.display = "block";
-				}
-			});
-
-			subdom.classList.add("listening-to-kouhi-deleted");
-
-			subdom.addEventListener("kouhi-deleted", function(event){
-				var kouhi = event.detail;
-				if( kouhi.patient_id !== patient.patient_id ){
-					return;
-				}
-				console.log(kouhi);
-				var relNodes = subdom.querySelectorAll("*[data-kouhi-id='" + kouhi.kouhi_id + "']");
-				console.log(relNodes);
-				var i, n;
-				n = relNodes.length;
-				for(i=0;i<n;i++){
-					rUtil.removeNode(relNodes.item(i));
-				}
-				var nodes = subdom.querySelectorAll(".kouhi-disp");
-				if( nodes.length === 0 ){
-					sub.style.display = "none";
-				}
-			});
-		});
-		if( hoken_list.length === 0 ){
-			sub.style.display = "none";
-		}
-		wrapper.append(sub);
-	};
-
-
+	module.exports = "<div class=\"koukikourei-detail\" data-koukikourei-id=\"{{koukikourei_id}}\">\r\n\t<table>\r\n\t<tr>\r\n\t\t<td>保険者番号</td>\r\n\t\t<td>{{hokensha_bangou}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t\t<td>被保険者番号</td>\r\n\t\t<td>{{hihokensha_bangou}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>負担割</td>\r\n\t    <td>{{futan_wari}}割</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（から）</td>\r\n\t    <td>{{valid_from_as_kanji}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（まで）</td>\r\n\t    <td>{{valid_upto_as_kanji}}</td>\r\n\t</tr>\r\n\t</table>\r\n\t<div class=\"cmd-wrapper\" style=\"text-align:right;margin-right:4px\">\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link close-koukikourei\">閉じる</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link edit-koukikourei\">編集</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link delete-koukikourei\">削除</a>\r\n\t</div>\r\n</div>\r\n"
 
 /***/ },
 /* 151 */
@@ -19433,178 +19368,10 @@
 	var hogan = __webpack_require__(2);
 	var tmplSrc = __webpack_require__(152);
 	var tmpl = hogan.compile(tmplSrc);
-	var mUtil = __webpack_require__(134);
 	var rUtil = __webpack_require__(14);
-	var Detail = __webpack_require__(166);
-	var Form = __webpack_require__(157);
-	var service = __webpack_require__(7);
-	var conti = __webpack_require__(10);
-
-	exports.create = function(kouhi, patient){
-		var rep = mUtil.kouhiRep(kouhi.futansha);
-		var data = {
-			label: rep
-		};
-		Object.keys(kouhi).forEach(function(key){
-			data[key] = kouhi[key];
-		});
-		var html = tmpl.render(data);
-		var dom = rUtil.makeNode(html);
-		bindDetail(dom, kouhi, patient);
-		return dom;
-	}
-
-	function bindDetail(dom, kouhi, patient){
-		dom.querySelector(".detail").addEventListener("click", function(){
-			var detail = Detail.create(kouhi, patient, {
-				onClose: function(){
-					rUtil.removeNode(detail);
-					dom.style.display = "block";	
-				},
-				onEdit: function(){
-					rUtil.removeNode(detail);
-					doEdit(dom, kouhi, patient);
-				},
-				onDelete: function(){
-					doDelete(dom, detail, kouhi);
-				}
-			});
-			detail.style.border = "1px solid #999";
-			detail.style.padding = "4px";
-			dom.style.display = "none";
-			dom.parentNode.insertBefore(detail, dom);
-		});
-	}
-
-	function doEdit(disp, kouhi, patient){
-		var data = {
-			kouhi: kouhi,
-			patient: patient
-		};
-		var form = Form.create(data, {
-			onEnter: function(values){
-				values.kouhi_id = kouhi.kouhi_id;
-				values.patient_id = patient.patient_id;
-				var updatedKouhi;
-				conti.exec([
-					function(done){
-						service.updateKouhi(values, done);	
-					},
-					function(done){
-						service.getKouhi(values.kouhi_id, function(err, result){
-							if( err ){
-								done(err);
-								return;
-							}
-							updatedKouhi = result;
-							done();
-						});
-					}
-				], function(err){
-					if( err ){
-						alert(err);
-						return;
-					}
-					var newDisp = exports.create(updatedKouhi, patient);
-					rUtil.removeNode(form);
-					disp.parentNode.replaceChild(newDisp, disp);
-				});
-			},
-			onCancel: function(){
-				rUtil.removeNode(form);
-				disp.style.display = "block";
-			}
-		});
-		form.classList.add("form-wrapper");
-		disp.parentNode.insertBefore(form, disp);
-	}
-
-	function doDelete(disp, detail, kouhi){
-		if( !confirm("この公費を削除していいですか？") ){
-			return;
-		}
-		service.deleteKouhi(kouhi.kouhi_id, function(err){
-			if( err ){
-				alert(err);
-				return;
-			}
-			var e = new CustomEvent("broadcast-kouhi-deleted", {
-				bubbles: true,
-				detail: kouhi
-			});
-			disp.dispatchEvent(e);
-		});
-	}
-
-
-/***/ },
-/* 152 */
-/***/ function(module, exports) {
-
-	module.exports = "<div class=\"kouhi-disp\" data-kouhi-id=\"{{kouhi_id}}\">\r\n\t{{label}}\r\n\t<a href=\"javascript:void(0)\" class=\"detail\">詳細</a>\r\n</div>\r\n\r\n"
-
-/***/ },
-/* 153 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var hogan = __webpack_require__(2);
-	var tmplSrc = __webpack_require__(154);
-	var tmpl = hogan.compile(tmplSrc);
-
-	exports.create = function(patient, callbacks){
-		var dom = document.createElement("div");
-		dom.innerHTML = tmpl.render({});
-		dom.querySelector(".new-shahokokuho").addEventListener("click", function(){
-			if( callbacks.onNewShahokokuho ){
-				callbacks.onNewShahokokuho();
-			}
-		});
-		dom.querySelector(".new-koukikourei").addEventListener("click", function(){
-			if( callbacks.onNewKoukikourei ){
-				callbacks.onNewKoukikourei();
-			}
-		});
-		dom.querySelector(".new-kouhi").addEventListener("click", function(){
-			if( callbacks.onNewKouhi ){
-				callbacks.onNewKouhi();
-			}
-		});
-		dom.querySelector(".edit-all-hoken").addEventListener("click", function(){
-			if( callbacks.onEditAllHoken ){
-				callbacks.onEditAllHoken();
-			}
-		});
-		dom.querySelector(".start-visit").addEventListener("click", function(){
-			if( callbacks.onStartVisit ){
-				callbacks.onStartVisit();
-			}
-		});
-		dom.querySelector(".close-panel").addEventListener("click", function(){
-			if( callbacks.onClose ){
-				callbacks.onClose();
-			}
-		});
-		return dom;
-	};
-
-
-/***/ },
-/* 154 */
-/***/ function(module, exports) {
-
-	module.exports = "<div>\r\n\t<hr style=\"border-top: 1px #999 solid\"/>\r\n\t<div style=\"margin:6px 4px\" data-role=\"patient-info-commands\">\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link new-shahokokuho\">社保・国保追加</a>\r\n\t\t|\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link new-koukikourei\">後期高齢追加</a>\r\n\t\t|\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link new-kouhi\">公費追加</a>\r\n\t\t|\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link edit-all-hoken\">全保険編集</a>\r\n\t</div>\r\n\t<div class=\"command-box\">\r\n\t\t<button class=\"start-visit\">診察受付</button>\r\n\t\t<button type=\"button\" class=\"close-panel\">閉じる</button>\r\n\t</div>\r\n</div>\r\n"
-
-/***/ },
-/* 155 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var hogan = __webpack_require__(2);
-	var tmplSrc = __webpack_require__(156);
-	var tmpl = hogan.compile(tmplSrc);
-	var rUtil = __webpack_require__(14);
-	var dateInputTmplSrc = __webpack_require__(140);
+	var dateInputTmplSrc = __webpack_require__(142);
 	var dateInputTmpl = hogan.compile(dateInputTmplSrc);
-	var DateInput = __webpack_require__(141);
+	var DateInput = __webpack_require__(143);
 	var conti = __webpack_require__(10);
 	var service = __webpack_require__(7);
 
@@ -19741,199 +19508,193 @@
 
 
 /***/ },
-/* 156 */
+/* 152 */
 /***/ function(module, exports) {
 
 	module.exports = "<div data-koukikourei-id=\"{{koukikourei_id}}\">\r\n\t<div style=\"font-weight:bold\">{{last_name}} {{first_name}}</div>\r\n\t<div class=\"error\" style=\"display:none\"></div>\r\n    <form onsubmit=\"return false;\">\r\n        <table>\r\n            <tr>\r\n                <td><label for=\"hokensha_bangou\">保険者番号</label></td>\r\n                <td><input name=\"hokensha_bangou\" value=\"{{hokensha_bangou}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"hihokensha_bangou\">被保険者番号</label></td>\r\n                <td><input name=\"hihokensha_bangou\" value=\"{{hihokensha_bangou}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"futan_wari\">負担割合</label></td>\r\n                <td>\r\n                    <input type=\"radio\" name=\"futan_wari\" value=\"1\"/>1割\r\n                    <input type=\"radio\" name=\"futan_wari\" value=\"2\"/>2割\r\n                    <input type=\"radio\" name=\"futan_wari\" value=\"3\"/>3割\r\n                </td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_from\">有効期限（から）</label></td>\r\n                <td class=\"valid-from-element\">{{> date-input}}</td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_upto\">有効期限（まで）</label></td>\r\n                <td class=\"valid-upto-element\">{{> date-input}}</td>\r\n            </tr>\r\n        </table>\r\n    </form>\r\n    <div>\r\n        <button class=\"enter\">入力</button>\r\n        <button class=\"cancel\">キャンセル</button>\r\n    </div>\r\n</div>\r\n"
 
 /***/ },
-/* 157 */
+/* 153 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var hogan = __webpack_require__(2);
-	var tmplSrc = __webpack_require__(158);
-	var tmpl = hogan.compile(tmplSrc);
-	var rUtil = __webpack_require__(14);
-	var dateInputTmplSrc = __webpack_require__(140);
-	var dateInputTmpl = hogan.compile(dateInputTmplSrc);
-	var DateInput = __webpack_require__(141);
-	var conti = __webpack_require__(10);
-	var service = __webpack_require__(7);
+	"use strict";
 
-	exports.create = function(data, callbacks){
-		var patient = data.patient;
-		var hoken = data.kouhi;
-		var data = {
-			last_name: patient.last_name,
-			first_name: patient.first_name
-		};
-		Object.keys(hoken).forEach(function(key){
-			data[key] = hoken[key];
+	var Disp = __webpack_require__(154);
+	var Subpanel = __webpack_require__(130);
+	var rUtil = __webpack_require__(14);
+
+	exports.setup = function(wrapper, hoken_list, patient){
+		var sub = Subpanel.create("老人保険", function(subdom){
+			hoken_list.forEach(function(hoken){
+				var disp = Disp.create(hoken, patient);
+				subdom.appendChild(disp);
+			});
+
+			subdom.classList.add("listening-to-roujin-entered");
+
+			subdom.addEventListener("roujin-entered", function(event){
+				var hoken = event.detail;
+				if( hoken.patient_id !== patient.patient_id ){
+					return;
+				}
+				var node = Disp.create(hoken, patient);
+				subdom.appendChild(node);
+				if( sub.style.display === "none" ){
+					sub.style.display = "block";
+				}
+			});
+
+			subdom.classList.add("listening-to-roujin-deleted");
+
+			subdom.addEventListener("roujin-deleted", function(event){
+				var roujin = event.detail;
+				if( roujin.patient_id !== patient.patient_id ){
+					return;
+				}
+				var relNodes = subdom.querySelectorAll("*[data-roujin-id='" + roujin.roujin_id + "']");
+				var i, n;
+				n = relNodes.length;
+				for(i=0;i<n;i++){
+					rUtil.removeNode(relNodes.item(i));
+				}
+				var nodes = subdom.querySelectorAll(".roujin-disp");
+				if( nodes.length === 0 ){
+					sub.style.display = "none";
+				}
+			});
 		});
-		var dom = rUtil.makeNode(tmpl.render(data, {
-			"date-input": dateInputTmpl	
-		}));
-		var validFromInput = new DateInput(dom.querySelector(".valid-from-element"));
-		validFromInput.setGengou("平成");
-		if( hoken.valid_from ){
-			validFromInput.set(hoken.valid_from);
+		if( hoken_list.length === 0 ){
+			sub.style.display = "none";
 		}
-		var validUptoInput = new DateInput(dom.querySelector(".valid-upto-element"));
-		validUptoInput.setGengou("平成");
-		if( hoken.valid_upto && hoken.valid_upto !== "0000-00-00" ){
-			validUptoInput.set(hoken.valid_upto);
-		}
-		dom.querySelector(".enter").addEventListener("click", function(event){
-			var errors = [];
-			var values = formValues(dom, errors);
-			if( errors.length > 0 ){
-				setError(dom, errors);
-				return;
-			}
-			callbacks.onEnter(values);
-		});
-		dom.querySelector(".cancel").addEventListener("click", function(event){
-			callbacks.onCancel();
-		});
-		return dom;
+		wrapper.append(sub);
 	};
 
-	function futanshaValue(dom, errs){
-		var value = dom.querySelector("input[name='futansha']").value;
-		if( value === "" ){
-			errs.push("負担者番号が入力されていません。");
-		} else if( value.match(/^\d+$/) ){
-			value = +value;
-		} else {
-			errs.push("負担者番号の入力が不適切です。");
-		}
-		return value;
-	}
-
-	function jukyuushaValue(dom, errs){
-		var value = dom.querySelector("input[name='jukyuusha']").value;
-		if( value === "" ){
-			errs.push("受給者番号が入力されていません。");
-		} else if( value.match(/^\d+$/) ){
-			value = +value;
-		} else {
-			errs.push("受給者番号の入力が不適切です。");
-		}
-		return value;
-	}
-
-	function validFromValue(dom, errs){
-		var dateInput = new DateInput(dom.querySelector(".valid-from-element"));
-		var value = dateInput.getSqlDate();
-		if( !value ){
-			var msg = "有効期限（から）の入力が不適切です。（";
-			msg += dateInput.errors.join("");
-			msg += "）";
-			errs.push(msg);
-		} else if( value === "0000-00-00" ){
-			errs.push("有効期限（から）が入力されていません。");
-			value = null;
-		}
-		return value;
-	}
-
-	function validUptoValue(dom, errs){
-		var dateInput = new DateInput(dom.querySelector(".valid-upto-element"));
-		var value = dateInput.getSqlDate();
-		if( !value ){
-			var msg = "有効期限（まで）の入力が不適切です。（";
-			msg += dateInput.errors.join("");
-			msg += "）";
-			errs.push(msg);
-		}
-		return value;
-	}
-
-	function formValues(dom, errs){
-		return {
-			futansha: futanshaValue(dom, errs),
-			jukyuusha: jukyuushaValue(dom, errs),
-			valid_from: validFromValue(dom, errs),
-			valid_upto: validUptoValue(dom, errs),
-		};
-	}
-
-	function setError(dom, errs){
-		var box = dom.querySelector(".error");
-		box.innerHTML = "";
-		errs.forEach(function(err){
-			var d = document.createElement("div");
-			var t = document.createTextNode(err);
-			d.appendChild(t);
-			box.appendChild(d);
-		});
-		box.style.display = "block";
-	}
-
 
 
 /***/ },
-/* 158 */
-/***/ function(module, exports) {
-
-	module.exports = "<div data-kouhi-id=\"{{kouhi_id}}\">\r\n\t<div style=\"font-weight:bold\">{{last_name}} {{first_name}}</div>\r\n\t<div class=\"error\" style=\"display:none\"></div>\r\n    <form onsubmit=\"return false;\">\r\n        <table>\r\n            <tr>\r\n                <td><label for=\"futansha\">負担者番号</label></td>\r\n                <td><input name=\"futansha\" value=\"{{futansha}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"jukyuusha\">受給者番号</label></td>\r\n                <td><input name=\"jukyuusha\" value=\"{{jukyuusha}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_from\">有効期限（から）</label></td>\r\n                <td class=\"valid-from-element\">{{> date-input}}</td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_upto\">有効期限（まで）</label></td>\r\n                <td class=\"valid-upto-element\">{{> date-input}}</td>\r\n            </tr>\r\n        </table>\r\n    </form>\r\n    <div>\r\n        <button class=\"enter\">入力</button>\r\n        <button class=\"cancel\">キャンセル</button>\r\n    </div>\r\n</div>\r\n"
-
-/***/ },
-/* 159 */
-/***/ function(module, exports) {
-
-	module.exports = "<div class=\"basic-info-wrapper\"></div>\r\n<div class=\"shahokokuho-wrapper\"></div>\r\n<div class=\"koukikourei-wrapper\"></div>\r\n<div class=\"roujin-wrapper\"></div>\r\n<div class=\"kouhi-wrapper\"></div>\r\n<div class=\"command-wrapper\"></div>\r\n"
-
-/***/ },
-/* 160 */
+/* 154 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var hogan = __webpack_require__(2);
-	var tmplSrc = __webpack_require__(161);
+	var tmplSrc = __webpack_require__(155);
 	var tmpl = hogan.compile(tmplSrc);
+	var mUtil = __webpack_require__(136);
 	var rUtil = __webpack_require__(14);
+	var Detail = __webpack_require__(156);
+	var Form = __webpack_require__(158);
+	var service = __webpack_require__(7);
+	var conti = __webpack_require__(10);
 
-	exports.create = function(koukikourei, patient, callbacks){
+	exports.create = function(roujin, patient){
+		var rep = "老人（" + roujin.futan_wari + "割）";
 		var data = {
-			valid_from_as_kanji: rUtil.validFromAsKanji(koukikourei.valid_from),
-			valid_upto_as_kanji: rUtil.validUptoAsKanji(koukikourei.valid_upto)
+			label: rep
 		};
-		Object.keys(koukikourei).forEach(function(key){
-			data[key] = koukikourei[key];
+		Object.keys(roujin).forEach(function(key){
+			data[key] = roujin[key];
 		});
 		var html = tmpl.render(data);
 		var dom = rUtil.makeNode(html);
-		linkCallbacks(dom, callbacks);
+		bindDetail(dom, roujin, patient);
 		return dom;
-	};
+	}
 
-	function linkCallbacks(dom, callbacks){
-		dom.querySelector(".close-koukikourei").addEventListener("click", function(){
-			callbacks.onClose();
+	function bindDetail(dom, roujin, patient){
+		dom.querySelector(".detail").addEventListener("click", function(){
+			var detail = Detail.create(roujin, patient, {
+				onClose: function(){
+					rUtil.removeNode(detail);
+					dom.style.display = "block";	
+				},
+				onEdit: function(){
+					rUtil.removeNode(detail);
+					doEdit(dom, roujin, patient);
+				},
+				onDelete: function(){
+					doDelete(dom, detail, roujin);
+				}
+			});
+			detail.classList.add("form-wrapper");
+			dom.style.display = "none";
+			dom.parentNode.insertBefore(detail, dom);
 		});
-		dom.querySelector(".edit-koukikourei").addEventListener("click", function(){
-			callbacks.onEdit();
+	}
+
+	function doEdit(disp, roujin, patient){
+		var data = {
+			roujin: roujin,
+			patient: patient
+		};
+		var form = Form.create(data, {
+			onEnter: function(values){
+				values.roujin_id = roujin.roujin_id;
+				values.patient_id = patient.patient_id;
+				var updatedRoujin;
+				conti.exec([
+					function(done){
+						service.updateRoujin(values, done);	
+					},
+					function(done){
+						service.getRoujin(values.roujin_id, function(err, result){
+							if( err ){
+								done(err);
+								return;
+							}
+							updatedRoujin = result;
+							done();
+						});
+					}
+				], function(err){
+					if( err ){
+						alert(err);
+						return;
+					}
+					var newDisp = exports.create(updatedRoujin, patient);
+					rUtil.removeNode(form);
+					disp.parentNode.replaceChild(newDisp, disp);
+				});
+			},
+			onCancel: function(){
+				rUtil.removeNode(form);
+				disp.style.display = "block";
+			}
 		});
-		dom.querySelector(".delete-koukikourei").addEventListener("click", function(){
-			callbacks.onDelete();
+		form.classList.add("form-wrapper");
+		disp.parentNode.insertBefore(form, disp);
+	}
+
+	function doDelete(disp, detail, roujin){
+		if( !confirm("この老人保険を削除していいですか？") ){
+			return;
+		}
+		service.deleteRoujin(roujin.roujin_id, function(err){
+			if( err ){
+				alert(err);
+				return;
+			}
+			var e = new CustomEvent("broadcast-roujin-deleted", {
+				bubbles: true,
+				detail: roujin
+			});
+			disp.dispatchEvent(e);
 		});
 	}
 
 
 /***/ },
-/* 161 */
+/* 155 */
 /***/ function(module, exports) {
 
-	module.exports = "<div class=\"koukikourei-detail\" data-koukikourei-id=\"{{koukikourei_id}}\">\r\n\t<table>\r\n\t<tr>\r\n\t\t<td>保険者番号</td>\r\n\t\t<td>{{hokensha_bangou}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t\t<td>被保険者番号</td>\r\n\t\t<td>{{hihokensha_bangou}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>負担割</td>\r\n\t    <td>{{futan_wari}}割</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（から）</td>\r\n\t    <td>{{valid_from_as_kanji}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（まで）</td>\r\n\t    <td>{{valid_upto_as_kanji}}</td>\r\n\t</tr>\r\n\t</table>\r\n\t<div class=\"cmd-wrapper\" style=\"text-align:right;margin-right:4px\">\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link close-koukikourei\">閉じる</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link edit-koukikourei\">編集</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link delete-koukikourei\">削除</a>\r\n\t</div>\r\n</div>\r\n"
+	module.exports = "<div class=\"roujin-disp\" data-roujin-id=\"{{roujin_id}}\">\r\n\t{{label}}\r\n\t<a href=\"javascript:void(0)\" class=\"detail\">詳細</a>\r\n</div>\r\n\r\n\r\n"
 
 /***/ },
-/* 162 */
+/* 156 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 
 	var hogan = __webpack_require__(2);
-	var tmplSrc = __webpack_require__(164);
+	var tmplSrc = __webpack_require__(157);
 	var tmpl = hogan.compile(tmplSrc);
 	var rUtil = __webpack_require__(14);
 
@@ -19965,18 +19726,24 @@
 
 
 /***/ },
-/* 163 */
+/* 157 */
+/***/ function(module, exports) {
+
+	module.exports = "<div class=\"roujin-detail\" data-roujin-id=\"{{roujin_id}}\">\r\n\t<table>\r\n\t<tr>\r\n\t\t<td>市町村番号</td>\r\n\t\t<td>{{shichouson}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t\t<td>受給者番号</td>\r\n\t\t<td>{{jukyuusha}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>負担割</td>\r\n\t    <td>{{futan_wari}}割</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（から）</td>\r\n\t    <td>{{valid_from_as_kanji}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（まで）</td>\r\n\t    <td>{{valid_upto_as_kanji}}</td>\r\n\t</tr>\r\n\t</table>\r\n\t<div class=\"cmd-wrapper\" style=\"text-align:right;margin-right:4px\">\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link close-roujin\">閉じる</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link edit-roujin\">編集</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link delete-roujin\">削除</a>\r\n\t</div>\r\n</div>\r\n"
+
+/***/ },
+/* 158 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 
 	var hogan = __webpack_require__(2);
-	var tmplSrc = __webpack_require__(165);
+	var tmplSrc = __webpack_require__(159);
 	var tmpl = hogan.compile(tmplSrc);
 	var rUtil = __webpack_require__(14);
-	var dateInputTmplSrc = __webpack_require__(140);
+	var dateInputTmplSrc = __webpack_require__(142);
 	var dateInputTmpl = hogan.compile(dateInputTmplSrc);
-	var DateInput = __webpack_require__(141);
+	var DateInput = __webpack_require__(143);
 	var conti = __webpack_require__(10);
 	var service = __webpack_require__(7);
 
@@ -20113,25 +19880,196 @@
 
 
 /***/ },
-/* 164 */
-/***/ function(module, exports) {
-
-	module.exports = "<div class=\"roujin-detail\" data-roujin-id=\"{{roujin_id}}\">\r\n\t<table>\r\n\t<tr>\r\n\t\t<td>市町村番号</td>\r\n\t\t<td>{{shichouson}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t\t<td>受給者番号</td>\r\n\t\t<td>{{jukyuusha}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>負担割</td>\r\n\t    <td>{{futan_wari}}割</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（から）</td>\r\n\t    <td>{{valid_from_as_kanji}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（まで）</td>\r\n\t    <td>{{valid_upto_as_kanji}}</td>\r\n\t</tr>\r\n\t</table>\r\n\t<div class=\"cmd-wrapper\" style=\"text-align:right;margin-right:4px\">\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link close-roujin\">閉じる</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link edit-roujin\">編集</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link delete-roujin\">削除</a>\r\n\t</div>\r\n</div>\r\n"
-
-/***/ },
-/* 165 */
+/* 159 */
 /***/ function(module, exports) {
 
 	module.exports = "<div class=\"roujin-form\" data-roujin-id=\"{{roujin_id}}\">\r\n\t<div style=\"font-weight:bold\">{{last_name}} {{first_name}}</div>\r\n\t<div class=\"error\" style=\"display:none\"></div>\r\n    <form onsubmit=\"return false;\">\r\n        <table>\r\n            <tr>\r\n                <td><label for=\"shichouson\">市町村番号</label></td>\r\n                <td><input name=\"shichouson\" value=\"{{shichouson}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"jukyuusha\">受給者番号</label></td>\r\n                <td><input name=\"jukyuusha\" value=\"{{jukyuusha}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"futan_wari\">負担割合</label></td>\r\n                <td>\r\n                    <input type=\"radio\" name=\"futan_wari\" value=\"1\"/>1割\r\n                    <input type=\"radio\" name=\"futan_wari\" value=\"2\"/>2割\r\n                    <input type=\"radio\" name=\"futan_wari\" value=\"3\"/>3割\r\n                </td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_from\">有効期限（から）</label></td>\r\n                <td class=\"valid-from-element\">{{> date-input}}</td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_upto\">有効期限（まで）</label></td>\r\n                <td class=\"valid-upto-element\">{{> date-input}}</td>\r\n            </tr>\r\n        </table>\r\n    </form>\r\n    <div>\r\n        <button class=\"enter\">入力</button>\r\n        <button class=\"cancel\">キャンセル</button>\r\n    </div>\r\n</div>\r\n"
 
 /***/ },
-/* 166 */
+/* 160 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	var Disp = __webpack_require__(161);
+	var Subpanel = __webpack_require__(130);
+	var rUtil = __webpack_require__(14);
+
+	exports.setup = function(wrapper, hoken_list, patient){
+		var sub = Subpanel.create("公費", function(subdom){
+			hoken_list.forEach(function(hoken){
+				var disp = Disp.create(hoken, patient);
+				subdom.appendChild(disp);
+			});
+
+			subdom.classList.add("listening-to-kouhi-entered");
+
+			subdom.addEventListener("kouhi-entered", function(event){
+				var hoken = event.detail;
+				if( hoken.patient_id !== patient.patient_id ){
+					return;
+				}
+				var node = Disp.create(hoken, patient);
+				subdom.appendChild(node);
+				if( sub.style.display === "none" ){
+					sub.style.display = "block";
+				}
+			});
+
+			subdom.classList.add("listening-to-kouhi-deleted");
+
+			subdom.addEventListener("kouhi-deleted", function(event){
+				var kouhi = event.detail;
+				if( kouhi.patient_id !== patient.patient_id ){
+					return;
+				}
+				console.log(kouhi);
+				var relNodes = subdom.querySelectorAll("*[data-kouhi-id='" + kouhi.kouhi_id + "']");
+				console.log(relNodes);
+				var i, n;
+				n = relNodes.length;
+				for(i=0;i<n;i++){
+					rUtil.removeNode(relNodes.item(i));
+				}
+				var nodes = subdom.querySelectorAll(".kouhi-disp");
+				if( nodes.length === 0 ){
+					sub.style.display = "none";
+				}
+			});
+		});
+		if( hoken_list.length === 0 ){
+			sub.style.display = "none";
+		}
+		wrapper.append(sub);
+	};
+
+
+
+/***/ },
+/* 161 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var hogan = __webpack_require__(2);
+	var tmplSrc = __webpack_require__(162);
+	var tmpl = hogan.compile(tmplSrc);
+	var mUtil = __webpack_require__(136);
+	var rUtil = __webpack_require__(14);
+	var Detail = __webpack_require__(163);
+	var Form = __webpack_require__(165);
+	var service = __webpack_require__(7);
+	var conti = __webpack_require__(10);
+
+	exports.create = function(kouhi, patient){
+		var rep = mUtil.kouhiRep(kouhi.futansha);
+		var data = {
+			label: rep
+		};
+		Object.keys(kouhi).forEach(function(key){
+			data[key] = kouhi[key];
+		});
+		var html = tmpl.render(data);
+		var dom = rUtil.makeNode(html);
+		bindDetail(dom, kouhi, patient);
+		return dom;
+	}
+
+	function bindDetail(dom, kouhi, patient){
+		dom.querySelector(".detail").addEventListener("click", function(){
+			var detail = Detail.create(kouhi, patient, {
+				onClose: function(){
+					rUtil.removeNode(detail);
+					dom.style.display = "block";	
+				},
+				onEdit: function(){
+					rUtil.removeNode(detail);
+					doEdit(dom, kouhi, patient);
+				},
+				onDelete: function(){
+					doDelete(dom, detail, kouhi);
+				}
+			});
+			detail.style.border = "1px solid #999";
+			detail.style.padding = "4px";
+			dom.style.display = "none";
+			dom.parentNode.insertBefore(detail, dom);
+		});
+	}
+
+	function doEdit(disp, kouhi, patient){
+		var data = {
+			kouhi: kouhi,
+			patient: patient
+		};
+		var form = Form.create(data, {
+			onEnter: function(values){
+				values.kouhi_id = kouhi.kouhi_id;
+				values.patient_id = patient.patient_id;
+				var updatedKouhi;
+				conti.exec([
+					function(done){
+						service.updateKouhi(values, done);	
+					},
+					function(done){
+						service.getKouhi(values.kouhi_id, function(err, result){
+							if( err ){
+								done(err);
+								return;
+							}
+							updatedKouhi = result;
+							done();
+						});
+					}
+				], function(err){
+					if( err ){
+						alert(err);
+						return;
+					}
+					var newDisp = exports.create(updatedKouhi, patient);
+					rUtil.removeNode(form);
+					disp.parentNode.replaceChild(newDisp, disp);
+				});
+			},
+			onCancel: function(){
+				rUtil.removeNode(form);
+				disp.style.display = "block";
+			}
+		});
+		form.classList.add("form-wrapper");
+		disp.parentNode.insertBefore(form, disp);
+	}
+
+	function doDelete(disp, detail, kouhi){
+		if( !confirm("この公費を削除していいですか？") ){
+			return;
+		}
+		service.deleteKouhi(kouhi.kouhi_id, function(err){
+			if( err ){
+				alert(err);
+				return;
+			}
+			var e = new CustomEvent("broadcast-kouhi-deleted", {
+				bubbles: true,
+				detail: kouhi
+			});
+			disp.dispatchEvent(e);
+		});
+	}
+
+
+/***/ },
+/* 162 */
+/***/ function(module, exports) {
+
+	module.exports = "<div class=\"kouhi-disp\" data-kouhi-id=\"{{kouhi_id}}\">\r\n\t{{label}}\r\n\t<a href=\"javascript:void(0)\" class=\"detail\">詳細</a>\r\n</div>\r\n\r\n"
+
+/***/ },
+/* 163 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 
 	var hogan = __webpack_require__(2);
-	var tmplSrc = __webpack_require__(167);
+	var tmplSrc = __webpack_require__(164);
 	var tmpl = hogan.compile(tmplSrc);
 	var rUtil = __webpack_require__(14);
 
@@ -20163,41 +20101,199 @@
 
 
 /***/ },
-/* 167 */
+/* 164 */
 /***/ function(module, exports) {
 
 	module.exports = "<div data-kouhi-id=\"{{kouhi_id}}\">\r\n\t<table>\r\n\t<tr>\r\n\t    <td>種類</td>\r\n\t    <td>{{rep}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>負担者番号</td>\r\n\t    <td>{{futansha}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>受給者番号</td>\r\n\t    <td>{{jukyuusha}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（から）</td>\r\n\t    <td>{{valid_from_as_kanji}}</td>\r\n\t</tr>\r\n\t<tr>\r\n\t    <td>有効期限（まで）</td>\r\n\t    <td>{{valid_upto_as_kanji}}</td>\r\n\t</tr>\r\n\t</table>\r\n\t<div class=\"cmd-wrapper\" style=\"text-align:right;margin-right:4px\">\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link close-kouhi\">閉じる</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link edit-kouhi\">編集</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link delete-kouhi\">削除</a>\r\n\t</div>\r\n</div>\r\n"
 
 /***/ },
-/* 168 */
+/* 165 */
 /***/ function(module, exports, __webpack_require__) {
 
-	"use strict";
-
 	var hogan = __webpack_require__(2);
-	var tmplSrc = __webpack_require__(169);
+	var tmplSrc = __webpack_require__(166);
 	var tmpl = hogan.compile(tmplSrc);
 	var rUtil = __webpack_require__(14);
+	var dateInputTmplSrc = __webpack_require__(142);
+	var dateInputTmpl = hogan.compile(dateInputTmplSrc);
+	var DateInput = __webpack_require__(143);
+	var conti = __webpack_require__(10);
+	var service = __webpack_require__(7);
+
+	exports.create = function(data, callbacks){
+		var patient = data.patient;
+		var hoken = data.kouhi;
+		var data = {
+			last_name: patient.last_name,
+			first_name: patient.first_name
+		};
+		Object.keys(hoken).forEach(function(key){
+			data[key] = hoken[key];
+		});
+		var dom = rUtil.makeNode(tmpl.render(data, {
+			"date-input": dateInputTmpl	
+		}));
+		var validFromInput = new DateInput(dom.querySelector(".valid-from-element"));
+		validFromInput.setGengou("平成");
+		if( hoken.valid_from ){
+			validFromInput.set(hoken.valid_from);
+		}
+		var validUptoInput = new DateInput(dom.querySelector(".valid-upto-element"));
+		validUptoInput.setGengou("平成");
+		if( hoken.valid_upto && hoken.valid_upto !== "0000-00-00" ){
+			validUptoInput.set(hoken.valid_upto);
+		}
+		dom.querySelector(".enter").addEventListener("click", function(event){
+			var errors = [];
+			var values = formValues(dom, errors);
+			if( errors.length > 0 ){
+				setError(dom, errors);
+				return;
+			}
+			callbacks.onEnter(values);
+		});
+		dom.querySelector(".cancel").addEventListener("click", function(event){
+			callbacks.onCancel();
+		});
+		return dom;
+	};
+
+	function futanshaValue(dom, errs){
+		var value = dom.querySelector("input[name='futansha']").value;
+		if( value === "" ){
+			errs.push("負担者番号が入力されていません。");
+		} else if( value.match(/^\d+$/) ){
+			value = +value;
+		} else {
+			errs.push("負担者番号の入力が不適切です。");
+		}
+		return value;
+	}
+
+	function jukyuushaValue(dom, errs){
+		var value = dom.querySelector("input[name='jukyuusha']").value;
+		if( value === "" ){
+			errs.push("受給者番号が入力されていません。");
+		} else if( value.match(/^\d+$/) ){
+			value = +value;
+		} else {
+			errs.push("受給者番号の入力が不適切です。");
+		}
+		return value;
+	}
+
+	function validFromValue(dom, errs){
+		var dateInput = new DateInput(dom.querySelector(".valid-from-element"));
+		var value = dateInput.getSqlDate();
+		if( !value ){
+			var msg = "有効期限（から）の入力が不適切です。（";
+			msg += dateInput.errors.join("");
+			msg += "）";
+			errs.push(msg);
+		} else if( value === "0000-00-00" ){
+			errs.push("有効期限（から）が入力されていません。");
+			value = null;
+		}
+		return value;
+	}
+
+	function validUptoValue(dom, errs){
+		var dateInput = new DateInput(dom.querySelector(".valid-upto-element"));
+		var value = dateInput.getSqlDate();
+		if( !value ){
+			var msg = "有効期限（まで）の入力が不適切です。（";
+			msg += dateInput.errors.join("");
+			msg += "）";
+			errs.push(msg);
+		}
+		return value;
+	}
+
+	function formValues(dom, errs){
+		return {
+			futansha: futanshaValue(dom, errs),
+			jukyuusha: jukyuushaValue(dom, errs),
+			valid_from: validFromValue(dom, errs),
+			valid_upto: validUptoValue(dom, errs),
+		};
+	}
+
+	function setError(dom, errs){
+		var box = dom.querySelector(".error");
+		box.innerHTML = "";
+		errs.forEach(function(err){
+			var d = document.createElement("div");
+			var t = document.createTextNode(err);
+			d.appendChild(t);
+			box.appendChild(d);
+		});
+		box.style.display = "block";
+	}
+
+
+
+/***/ },
+/* 166 */
+/***/ function(module, exports) {
+
+	module.exports = "<div data-kouhi-id=\"{{kouhi_id}}\">\r\n\t<div style=\"font-weight:bold\">{{last_name}} {{first_name}}</div>\r\n\t<div class=\"error\" style=\"display:none\"></div>\r\n    <form onsubmit=\"return false;\">\r\n        <table>\r\n            <tr>\r\n                <td><label for=\"futansha\">負担者番号</label></td>\r\n                <td><input name=\"futansha\" value=\"{{futansha}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"jukyuusha\">受給者番号</label></td>\r\n                <td><input name=\"jukyuusha\" value=\"{{jukyuusha}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_from\">有効期限（から）</label></td>\r\n                <td class=\"valid-from-element\">{{> date-input}}</td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_upto\">有効期限（まで）</label></td>\r\n                <td class=\"valid-upto-element\">{{> date-input}}</td>\r\n            </tr>\r\n        </table>\r\n    </form>\r\n    <div>\r\n        <button class=\"enter\">入力</button>\r\n        <button class=\"cancel\">キャンセル</button>\r\n    </div>\r\n</div>\r\n"
+
+/***/ },
+/* 167 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var hogan = __webpack_require__(2);
+	var tmplSrc = __webpack_require__(168);
+	var tmpl = hogan.compile(tmplSrc);
 
 	exports.create = function(patient, callbacks){
-		var data = {
-
-		};
-		Object.keys(patient).forEach(function(key){
-			data[key] = patient[key];
+		var dom = document.createElement("div");
+		dom.innerHTML = tmpl.render({});
+		dom.querySelector(".new-shahokokuho").addEventListener("click", function(){
+			if( callbacks.onNewShahokokuho ){
+				callbacks.onNewShahokokuho();
+			}
 		});
-		var html = tmpl.render(data);
-		var dom = rUtil.makeNode(html);
-
+		dom.querySelector(".new-koukikourei").addEventListener("click", function(){
+			if( callbacks.onNewKoukikourei ){
+				callbacks.onNewKoukikourei();
+			}
+		});
+		dom.querySelector(".new-kouhi").addEventListener("click", function(){
+			if( callbacks.onNewKouhi ){
+				callbacks.onNewKouhi();
+			}
+		});
+		dom.querySelector(".edit-all-hoken").addEventListener("click", function(){
+			if( callbacks.onEditAllHoken ){
+				callbacks.onEditAllHoken();
+			}
+		});
+		dom.querySelector(".start-visit").addEventListener("click", function(){
+			if( callbacks.onStartVisit ){
+				callbacks.onStartVisit();
+			}
+		});
+		dom.querySelector(".close-panel").addEventListener("click", function(){
+			if( callbacks.onClose ){
+				callbacks.onClose();
+			}
+		});
 		return dom;
 	};
 
 
 /***/ },
+/* 168 */
+/***/ function(module, exports) {
+
+	module.exports = "<div>\r\n\t<hr style=\"border-top: 1px #999 solid\"/>\r\n\t<div style=\"margin:6px 4px\" data-role=\"patient-info-commands\">\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link new-shahokokuho\">社保・国保追加</a>\r\n\t\t|\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link new-koukikourei\">後期高齢追加</a>\r\n\t\t|\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link new-kouhi\">公費追加</a>\r\n\t\t|\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link edit-all-hoken\">全保険編集</a>\r\n\t</div>\r\n\t<div class=\"command-box\">\r\n\t\t<button class=\"start-visit\">診察受付</button>\r\n\t\t<button type=\"button\" class=\"close-panel\">閉じる</button>\r\n\t</div>\r\n</div>\r\n"
+
+/***/ },
 /* 169 */
 /***/ function(module, exports) {
 
-	module.exports = "<div class=\"patient-form\">\r\n\t<div class=\"error\" style=\"display:none\"></div>\r\n\t<form onsubmit=\"return false;\">\r\n\t\t<table width=\"100%\">\r\n\t\t\t{{#patient_id}}\r\n\t\t\t<tr>\r\n\t\t\t\t<td style=\"white-space:nowrap\">患者番号</td>\r\n\t\t\t\t<td>{{patient_id}}</td>\r\n\t\t\t</tr>\r\n\t\t\t{{/patient_id}}\r\n\t\t\t<tr>\r\n\t\t\t\t<td>名前</td>\r\n\t\t\t\t<td>\r\n\t\t\t\t\t<input name=\"last_name\" value=\"{{last_name}}\" style=\"width:6em\"/> \r\n\t\t\t\t\t<input name=\"first_name\" value=\"{{first_name}}\" style=\"width:6em\"/>\r\n\t\t\t\t</td>\r\n\t\t\t</tr>\r\n\t\t\t<tr>\r\n\t\t\t\t<td>よみ</td>\r\n\t\t\t\t<td>\r\n\t\t\t\t\t<input name=\"last_name_yomi\" value=\"{{last_name_yomi}}\" style=\"width:6em\"/> \r\n\t\t\t\t\t<input name=\"first_name_yomi\" value=\"{{first_name_yomi}}\" style=\"width:6em\"/>\r\n\t\t\t\t</td>\r\n\t\t\t</tr>\r\n\t\t\t<tr>\r\n\t\t\t\t<td style=\"white-space:nowrap\"><label for=\"birth_day\">生年月日</label></td>\r\n\t\t\t\t<td class=\"birth-day-element\"></td>\r\n\t\t\t</tr>\r\n\t\t\t<tr>\r\n\t\t\t\t<td><label for=\"sex\">性別</label></td>\r\n\t\t\t\t<td><input type=\"radio\" name=\"sex\" value=\"M\"/>男 \r\n\t\t\t\t\t<input type=\"radio\" name=\"sex\" value=\"F\"/>女</td>\r\n\t\t\t</tr>\r\n\t\t\t<tr>\r\n\t\t\t\t<td><label for=\"address\">住所</label></td>\r\n\t\t\t\t<td><input name=\"address\" style=\"width:20em\" value=\"{{address}}\"/></td>\r\n\t\t\t</tr>\r\n\t\t\t<tr>\r\n\t\t\t\t<td><label for=\"phone\">電話</label></td>\r\n\t\t\t\t<td><input name=\"phone\" value=\"{{phone}}\"/></td>\r\n\t\t\t</tr>\r\n\t\t</table>\r\n\t</form>\r\n\t<div>\r\n\t\t<button class=\"enter\">入力</button>\r\n\t\t<button class=\"cancel\">キャンセル</button>\r\n\t</div>\r\n</div>\r\n"
+	module.exports = "<div class=\"basic-info-wrapper\"></div>\r\n<div class=\"shahokokuho-wrapper\"></div>\r\n<div class=\"koukikourei-wrapper\"></div>\r\n<div class=\"roujin-wrapper\"></div>\r\n<div class=\"kouhi-wrapper\"></div>\r\n<div class=\"command-wrapper\"></div>\r\n"
 
 /***/ }
 /******/ ]);
