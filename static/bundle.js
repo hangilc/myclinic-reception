@@ -2798,6 +2798,10 @@
 		return moment().format("YYYY-MM-DD");
 	};
 
+	exports.nowAsSqlDateTime = function(){
+		return moment().format("YYYY-MM-DD HH:mm:ss");
+	};
+
 	exports.validFromAsKanji = function(d){
 		return kanjidate.format(kanjidate.f2, d);
 	};
@@ -18166,7 +18170,11 @@
 					});
 				},
 				onStartVisit: function(){
-					console.log("start-visit");
+					service.startVisit(patient.patient_id, rUtil.nowAsSqlDateTime(), function(err){
+						var e = new Event("new-visit", { bubbles: true });
+						wrapper.dispatchEvent(e);
+						rUtil.removeNode(wrapper);
+					});
 				},
 				onClose: function(){
 					wrapper.parentNode.removeChild(wrapper);	
@@ -18846,23 +18854,6 @@
 	var Disp = __webpack_require__(140);
 	var Subpanel = __webpack_require__(130);
 	var rUtil = __webpack_require__(14);
-
-	/**
-	exports.render = function(dom, shahokokuhoList, patient){
-		shahokokuhoList.forEach(function(hoken){
-			var node = Disp.create(hoken, patient);
-			dom.appendChild(node);
-		});
-
-		dom.classList.add("listening-to-shahokokuho-entered");
-
-		dom.addEventListener("shahokokuho-entered", function(event){
-			var hoken = event.detail;
-			var node = Disp.create(hoken, patient);
-			dom.appendChild(node);
-		});
-	};
-	**/
 
 	exports.setup = function(wrapper, hoken_list, patient){
 		wrapper.innerHTML = "";

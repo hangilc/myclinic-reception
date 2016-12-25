@@ -47,7 +47,11 @@ exports.add = function(data){
 				});
 			},
 			onStartVisit: function(){
-				console.log("start-visit");
+				service.startVisit(patient.patient_id, rUtil.nowAsSqlDateTime(), function(err){
+					var e = new Event("new-visit", { bubbles: true });
+					wrapper.dispatchEvent(e);
+					rUtil.removeNode(wrapper);
+				});
 			},
 			onClose: function(){
 				wrapper.parentNode.removeChild(wrapper);	

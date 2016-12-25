@@ -28,6 +28,10 @@ exports.todayAsSqlDate = function(){
 	return moment().format("YYYY-MM-DD");
 };
 
+exports.nowAsSqlDateTime = function(){
+	return moment().format("YYYY-MM-DD HH:mm:ss");
+};
+
 exports.validFromAsKanji = function(d){
 	return kanjidate.format(kanjidate.f2, d);
 };
