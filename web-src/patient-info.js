@@ -20,9 +20,7 @@ var service = require("myclinic-service-api");
 var rUtil = require("../reception-util.js");
 var moment = require("moment");
 
-exports.add = function(data){
-	var patient = data.patient;
-	var hoken = data.hoken;
+exports.create = function(patient, hoken){
 	var title = "患者情報（" + patient.last_name + patient.first_name + "）";
 	var panel = Panel.create(title, function(dom){
 		dom.innerHTML = tmplSrc;
@@ -60,7 +58,7 @@ exports.add = function(data){
 		});
 		dom.appendChild(commandBox);
 	});
-	Panel.prepend(panel);
+	return panel;
 };
 
 function setupHoken(dom, hoken, patient){

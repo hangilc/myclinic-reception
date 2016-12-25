@@ -26,10 +26,12 @@ exports.create = function(patient, callbacks){
 		var dateInput = new DateInput(dom.querySelector(".birth-day-element"));		
 		dateInput.setGengou("昭和");
 	}
-	dom.querySelector(".enter").addEventListener("click", function(){
+	dom.querySelector(".enter").addEventListener("click", function(event){
+		event.target.disabled = true;
 		var errs = [];
 		var values = getValues(dom, errs);
 		if( errs.length > 0 ){
+			event.target.disabled = false;
 			setError(dom, errs);
 		} else {
 			callbacks.onEnter(values);

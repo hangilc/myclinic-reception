@@ -101,7 +101,7 @@ domPatientInfoLink.addEventListener("click", function(){
 			alert(err);
 			return;
 		}
-		PatientInfo.add(result);
+		Panel.prepend(PatientInfo.create(result.patient, result.hoken));
 	});
 });
 

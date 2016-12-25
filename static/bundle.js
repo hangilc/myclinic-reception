@@ -147,7 +147,7 @@
 				alert(err);
 				return;
 			}
-			PatientInfo.add(result);
+			Panel.prepend(PatientInfo.create(result.patient, result.hoken));
 		});
 	});
 
@@ -18168,9 +18168,7 @@
 	var rUtil = __webpack_require__(14);
 	var moment = __webpack_require__(16);
 
-	exports.add = function(data){
-		var patient = data.patient;
-		var hoken = data.hoken;
+	exports.create = function(patient, hoken){
 		var title = "患者情報（" + patient.last_name + patient.first_name + "）";
 		var panel = Panel.create(title, function(dom){
 			dom.innerHTML = tmplSrc;
@@ -18208,7 +18206,7 @@
 			});
 			dom.appendChild(commandBox);
 		});
-		Panel.prepend(panel);
+		return panel;
 	};
 
 	function setupHoken(dom, hoken, patient){
@@ -18581,10 +18579,12 @@
 			var dateInput = new DateInput(dom.querySelector(".birth-day-element"));		
 			dateInput.setGengou("昭和");
 		}
-		dom.querySelector(".enter").addEventListener("click", function(){
+		dom.querySelector(".enter").addEventListener("click", function(event){
+			event.target.disabled = true;
 			var errs = [];
 			var values = getValues(dom, errs);
 			if( errs.length > 0 ){
+				event.target.disabled = false;
 				setError(dom, errs);
 			} else {
 				callbacks.onEnter(values);
@@ -20451,20 +20451,42 @@
 	var Subpanel = __webpack_require__(130);
 	var PatientForm = __webpack_require__(134);
 	var rUtil = __webpack_require__(14);
+	var service = __webpack_require__(7);
+	var PatientInfo = __webpack_require__(127);
 
 	exports.create = function(){
-		return Panel.create("新規患者入力", function(dom, panel){
+		var panel = Panel.create("新規患者入力", function(dom, panel){
 			var patient = {
 				sex: "F"
 			};
 			var form = PatientForm.create(patient, {
+				onEnter: function(values){
+					service.enterPatient(values, function(err){
+						if( err ){
+							alert(err);
+							return;
+						}
+						var infoPanel = PatientInfo.create(values, blankHoken());
+						panel.parentNode.replaceChild(infoPanel, panel);
+					});
+				},
 				onCancel: function(){
 					rUtil.removeNode(panel);	
 				}
 			});
 			dom.appendChild(form);
 		});
+		return panel;
 	};
+
+	function blankHoken(){
+		return {
+			shahokokuho_list: [],
+			koukikourei_list: [],
+			roujin_list: [],
+			kouhi_list: []
+		};
+	}
 
 
 /***/ }
