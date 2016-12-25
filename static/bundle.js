@@ -1716,12 +1716,16 @@
 		request("list_full_wqueue", {}, "GET", cb);
 	};
 
-	exports.updatePatient = function(patient){
+	exports.updatePatient = function(patient, done){
 		request("update_patient", patient, "POST", done);
 	};
 
 	exports.getShahokokuho = function(shahokokuhoId, cb){
 		request("get_shahokokuho", { shahokokuho_id: shahokokuhoId }, "GET", cb);
+	};
+
+	exports.findShahokokuho = function(shahokokuhoId, cb){
+		request("find_shahokokuho", { shahokokuho_id: shahokokuhoId }, "GET", cb);
 	};
 
 	exports.updateShahokokuho = function(shahokokuho, done){
@@ -1743,8 +1747,16 @@
 		});
 	};
 
+	exports.listShahokokuho = function(patientId, cb){
+		request("list_shahokokuho", { patient_id: patientId }, "GET", cb);
+	};
+
 	exports.getKoukikourei = function(koukikoureiId, cb){
 		request("get_koukikourei", { koukikourei_id: koukikoureiId }, "GET", cb);
+	};
+
+	exports.findKoukikourei = function(koukikoureiId, cb){
+		request("find_koukikourei", { koukikourei_id: koukikoureiId }, "GET", cb);
 	};
 
 	exports.updateKoukikourei = function(koukikourei, done){
@@ -1766,8 +1778,16 @@
 		});
 	};
 
+	exports.listKoukikourei = function(patientId, cb){
+		request("list_koukikourei", { patient_id: patientId }, "GET", cb);
+	};
+
 	exports.getRoujin = function(roujinId, cb){
 		request("get_roujin", { roujin_id: roujinId }, "GET", cb);
+	};
+
+	exports.findRoujin = function(roujinId, cb){
+		request("find_roujin", { roujin_id: roujinId }, "GET", cb);
 	};
 
 	exports.updateRoujin = function(roujin, done){
@@ -1789,8 +1809,16 @@
 		});
 	};
 
+	exports.listRoujin = function(patientId, cb){
+		request("list_roujin", { patient_id: patientId }, "GET", cb);
+	};
+
 	exports.getKouhi = function(kouhiId, cb){
 		request("get_kouhi", { kouhi_id: kouhiId }, "GET", cb);
+	};
+
+	exports.findKouhi = function(kouhiId, cb){
+		request("find_kouhi", { kouhi_id: kouhiId }, "GET", cb);
 	};
 
 	exports.updateKouhi = function(kouhi, done){
@@ -1810,6 +1838,10 @@
 			kouhi.kouhi_id = result;
 			done();
 		});
+	};
+
+	exports.listKouhi = function(patientId, cb){
+		request("list_kouhi", { patient_id: patientId }, "GET", cb);
 	};
 
 	exports.listRecentlyEnteredPatients = function(n, cb){
@@ -18086,13 +18118,13 @@
 	var hogan = __webpack_require__(2);
 	var Util = __webpack_require__(14);
 	var BasicInfo = __webpack_require__(132);
-	var mUtil = __webpack_require__(136);
-	var ShahokokuhoArea = __webpack_require__(137);
+	var mUtil = __webpack_require__(138);
+	var ShahokokuhoArea = __webpack_require__(139);
 	var KoukikoureiArea = __webpack_require__(146);
 	var RoujinArea = __webpack_require__(153);
 	var KouhiArea = __webpack_require__(160);
 	var CommandBox = __webpack_require__(167);
-	var ShahokokuhoForm = __webpack_require__(140);
+	var ShahokokuhoForm = __webpack_require__(142);
 	var KoukikoureiForm = __webpack_require__(151);
 	var KouhiForm = __webpack_require__(165);
 	var tmplSrc = __webpack_require__(169);
@@ -18352,6 +18384,8 @@
 	var rUtil = __webpack_require__(14);
 	var Subpanel = __webpack_require__(130);
 	var Form = __webpack_require__(134);
+	var conti = __webpack_require__(10);
+	var service = __webpack_require__(7);
 
 	exports.setup = function(wrapper, patient){
 		var sub = Subpanel.create("基本情報", function(subdom){
@@ -18374,7 +18408,7 @@
 		dom.querySelector(".edit-basic").addEventListener("click", function(){
 			var form = Form.create(patient, {
 				onEnter: function(values){
-					console.log("VALUES", values);
+					doEnter(dom, form, patient, values);
 				},
 				onCancel: function(){
 					rUtil.removeNode(form);
@@ -18388,6 +18422,36 @@
 		});
 		return dom;
 	};
+
+	function doEnter(dom, form, patient, values){
+		values.patient_id = patient.patient_id;
+		var updatedPatient;
+		conti.exec([
+			function(done){
+				service.updatePatient(values, done);
+			},
+			function(done){
+				service.getPatient(patient.patient_id, function(err, result){
+					if( err ){
+						done(err);
+						return;
+					}
+					updatedPatient = result;
+					done();
+				});
+			}
+		], function(err){
+			if( err ){
+				alert(err);
+				return;
+			}
+			rUtil.removeNode(form);
+			var newDom = createDisp(updatedPatient);
+			dom.parentNode.replaceChild(newDom, dom);
+		});
+	}
+
+
 
 
 
@@ -18407,9 +18471,9 @@
 	var tmplSrc = __webpack_require__(135);
 	var tmpl = hogan.compile(tmplSrc);
 	var rUtil = __webpack_require__(14);
-	var dateInputTmplSrc = __webpack_require__(142);
+	var dateInputTmplSrc = __webpack_require__(136);
 	var dateInputTmpl = hogan.compile(dateInputTmplSrc);
-	var DateInput = __webpack_require__(143);
+	var DateInput = __webpack_require__(137);
 
 	exports.create = function(patient, callbacks){
 		var data = {
@@ -18521,6 +18585,130 @@
 /* 136 */
 /***/ function(module, exports) {
 
+	module.exports = "<select name=\"gengou\">\r\n\t<option value=\"明治\">明治</option>\r\n\t<option value=\"大正\">大正</option>\r\n\t<option value=\"昭和\">昭和</option>\r\n\t<option value=\"平成\">平成</option>\r\n\t<option value=\"西暦\">西暦</option>\r\n</select>\r\n<input name=\"nen\" style=\"width:2em\"/>年\r\n<input name=\"month\" style=\"width:2em\"/>月\r\n<input name=\"day\" style=\"width:2em\"/>日\r\n"
+
+/***/ },
+/* 137 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var kanjidate = __webpack_require__(15);
+	var moment = __webpack_require__(16);
+
+	function DateInput(dom){
+		this.dom = dom;
+	}
+
+	DateInput.prototype.setGengou = function(gengou){
+		var dom = this.dom;
+		dom.querySelector("select[name=gengou] option[value=" + gengou + "]").selected = true;
+	};
+
+	DateInput.prototype.setNen = function(nen){
+		this.dom.querySelector("input[name='nen']").value = nen;
+		return this;
+	};
+
+	DateInput.prototype.setMonth = function(month){
+		this.dom.querySelector("input[name='month']").value = month;
+		return this;
+	};
+
+	DateInput.prototype.setDay = function(day){
+		this.dom.querySelector("input[name='day']").value = day;
+		return this;
+	};
+
+	DateInput.prototype.set = function(d){
+		if( d === "0000-00-00" || !d ){
+			this.setNen("");
+			this.setMonth("");
+			this.setDay("");
+			return this;	
+		}
+		var m = moment(d);
+		var year = m.year();
+		var month = m.month() + 1;
+		var day = m.date();
+		var g = kanjidate.toGengou(year, month, day);
+		this.setGengou(g.gengou);
+		this.setNen(g.nen);
+		this.setMonth(month);
+		this.setDay(day);
+		return this;
+	};
+
+	DateInput.prototype.getGengou = function(){
+		return this.dom.querySelector("select[name='gengou'] option:checked").value;
+	};
+
+	DateInput.prototype.getNen = function(){
+		return this.dom.querySelector("input[name='nen']").value;
+	};
+
+	DateInput.prototype.getMonth = function(){
+		return this.dom.querySelector("input[name='month']").value;
+	};
+
+	DateInput.prototype.getDay = function(){
+		return this.dom.querySelector("input[name='day']").value;
+	};
+
+	DateInput.prototype.getValues = function(){
+		return {
+			gengou: this.getGengou(),
+			nen: this.getNen(),
+			month: this.getMonth(),
+			day: this.getDay()
+		}
+	}
+
+	DateInput.prototype.getSqlDate = function(){
+		var values = this.getValues();
+		this.errors = [];
+		if( values.nen === "" && values.month === "" && values.day === "" ){
+			return "0000-00-00";
+		}
+		var gengou = values.gengou;
+		var nen, month, day;
+		if( values.nen === "" ){
+			this.errors.push("年が入力されていません。");
+		} else if( !values.nen.match(/^\d+$/) ){
+			this.errors.push("年の入力が不適切です。");	
+		} else {
+			nen = +values.nen;
+		}
+		if( values.month === "" ){
+			this.errors.push("月が入力されていません。");
+		} else if( !values.month.match(/^\d+$/) ){
+			this.errors.push("月の入力が不適切です。");	
+		} else {
+			month = +values.month;
+		}
+		if( values.day === "" ){
+			this.errors.push("日が入力されていません。");
+		} else if( !values.day.match(/^\d+$/) ){
+			this.errors.push("日の入力が不適切です。");	
+		} else {
+			day = +values.day;
+		}
+		var year = kanjidate.fromGengou(gengou, nen);
+		var m = moment({year: year, month: month-1, day: day});
+		if( values.nen !== "" && values.month !== "" && values.day !== "" && !m.isValid() ){
+			this.errors.push("日付が適切でありません。");
+		}
+		if( this.errors.length > 0 ){
+			return null;
+		}
+		return m.format("YYYY-MM-DD");
+	};
+
+	module.exports = DateInput;
+
+
+/***/ },
+/* 138 */
+/***/ function(module, exports) {
+
 	
 	exports.hokenRep = function(visit){
 		var terms = [];
@@ -18600,12 +18788,12 @@
 
 
 /***/ },
-/* 137 */
+/* 139 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var Disp = __webpack_require__(138);
+	var Disp = __webpack_require__(140);
 	var Subpanel = __webpack_require__(130);
 	var rUtil = __webpack_require__(14);
 
@@ -18672,15 +18860,15 @@
 
 
 /***/ },
-/* 138 */
+/* 140 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var hogan = __webpack_require__(2);
-	var tmplSrc = __webpack_require__(139);
+	var tmplSrc = __webpack_require__(141);
 	var tmpl = hogan.compile(tmplSrc);
-	var mUtil = __webpack_require__(136);
+	var mUtil = __webpack_require__(138);
 	var rUtil = __webpack_require__(14);
-	var ShahokokuhoForm = __webpack_require__(140);
+	var ShahokokuhoForm = __webpack_require__(142);
 	var conti = __webpack_require__(10);
 	var service = __webpack_require__(7);
 	var Detail = __webpack_require__(144);
@@ -18781,23 +18969,23 @@
 
 
 /***/ },
-/* 139 */
+/* 141 */
 /***/ function(module, exports) {
 
 	module.exports = "<div class=\"shahokokuho-disp\" data-shahokokuho-id=\"{{shahokokuho_id}}\">\r\n\t{{label}}\r\n\t<a href=\"javascript:void(0)\" class=\"detail\">詳細</a>\r\n</div>\r\n\r\n"
 
 /***/ },
-/* 140 */
+/* 142 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 
 	var hogan = __webpack_require__(2);
-	var tmplSrc = __webpack_require__(141);
+	var tmplSrc = __webpack_require__(143);
 	var tmpl = hogan.compile(tmplSrc);
-	var dateInputTmplSrc = __webpack_require__(142);
+	var dateInputTmplSrc = __webpack_require__(136);
 	var dateInputTmpl = hogan.compile(dateInputTmplSrc);
-	var DateInput = __webpack_require__(143);
+	var DateInput = __webpack_require__(137);
 	var conti = __webpack_require__(10);
 	var service = __webpack_require__(7);
 	var rUtil = __webpack_require__(14);
@@ -18948,134 +19136,10 @@
 
 
 /***/ },
-/* 141 */
+/* 143 */
 /***/ function(module, exports) {
 
 	module.exports = "<div data-shahokokuho-id=\"{{shahokokuho_id}}\">\r\n\t<div style=\"font-weight:bold\">{{last_name}} {{first_name}}</div>\r\n\t<div class=\"error\" style=\"display:none\"></div>\r\n    <form onsubmit=\"return false\" class=\"shahokokuho-form\">\r\n        <table>\r\n            <tr>\r\n                <td><label for=\"hokensha_bangou\">保険者番号</label></td>\r\n                <td><input name=\"hokensha_bangou\" value=\"{{hokensha_bangou}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"hihokensha_kigou\">被保険者記号</label></td>\r\n                <td><input name=\"hihokensha_kigou\" value=\"{{hihokensha_kigou}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"hihokensha_bangou\">被保険者番号</label></td>\r\n                <td><input name=\"hihokensha_bangou\" value=\"{{hihokensha_bangou}}\"/></td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"honnin\">本人・家族</label></td>\r\n                <td><input type=\"radio\" name=\"honnin\" value=\"1\" {{#honnin}}checked{{/honnin}}/>本人\r\n                    <input type=\"radio\" name=\"honnin\" value=\"0\" {{^honnin}}checked{{/honnin}}/>家族</td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_from\">有効期限（から）</label></td>\r\n                <td class=\"valid-from-element\">{{> date-input}}</td>\r\n            </tr>\r\n            <tr>\r\n                <td><label for=\"valid_upto\">有効期限（まで）</label></td>\r\n                <td class=\"valid-upto-element\">{{> date-input}}</td>\r\n            </tr>\r\n            <tr valign=\"top\">\r\n                <td><label for=\"kourei\">高齢</label></td>\r\n                <td>\r\n                    <span style=\"white-space: nowrap\"><input type=\"radio\" name=\"kourei\" value=\"0\"/>高齢でない</span><br class=\"kourei-br\"/>\r\n                    <span style=\"white-space: nowrap\"><input type=\"radio\" name=\"kourei\" value=\"1\"/>１割</span>\r\n                    <span style=\"white-space: nowrap\"><input type=\"radio\" name=\"kourei\" value=\"2\"/>２割</span>\r\n                    <span style=\"white-space: nowrap\"><input type=\"radio\" name=\"kourei\" value=\"3\"/>３割</span>\r\n                </td>\r\n            </tr>\r\n        </table>\r\n\t    <div>\r\n\t        <button class=\"enter\">入力</button>\r\n\t        <button class=\"cancel\">キャンセル</button>\r\n\t    </div>\r\n    </form>\r\n</div>\r\n"
-
-/***/ },
-/* 142 */
-/***/ function(module, exports) {
-
-	module.exports = "<select name=\"gengou\">\r\n\t<option value=\"明治\">明治</option>\r\n\t<option value=\"大正\">大正</option>\r\n\t<option value=\"昭和\">昭和</option>\r\n\t<option value=\"平成\">平成</option>\r\n\t<option value=\"西暦\">西暦</option>\r\n</select>\r\n<input name=\"nen\" style=\"width:2em\"/>年\r\n<input name=\"month\" style=\"width:2em\"/>月\r\n<input name=\"day\" style=\"width:2em\"/>日\r\n"
-
-/***/ },
-/* 143 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var kanjidate = __webpack_require__(15);
-	var moment = __webpack_require__(16);
-
-	function DateInput(dom){
-		this.dom = dom;
-	}
-
-	DateInput.prototype.setGengou = function(gengou){
-		var dom = this.dom;
-		dom.querySelector("select[name=gengou] option[value=" + gengou + "]").selected = true;
-	};
-
-	DateInput.prototype.setNen = function(nen){
-		this.dom.querySelector("input[name='nen']").value = nen;
-		return this;
-	};
-
-	DateInput.prototype.setMonth = function(month){
-		this.dom.querySelector("input[name='month']").value = month;
-		return this;
-	};
-
-	DateInput.prototype.setDay = function(day){
-		this.dom.querySelector("input[name='day']").value = day;
-		return this;
-	};
-
-	DateInput.prototype.set = function(d){
-		if( d === "0000-00-00" || !d ){
-			this.setNen("");
-			this.setMonth("");
-			this.setDay("");
-			return this;	
-		}
-		var m = moment(d);
-		var year = m.year();
-		var month = m.month() + 1;
-		var day = m.date();
-		var g = kanjidate.toGengou(year, month, day);
-		this.setGengou(g.gengou);
-		this.setNen(g.nen);
-		this.setMonth(month);
-		this.setDay(day);
-		return this;
-	};
-
-	DateInput.prototype.getGengou = function(){
-		return this.dom.querySelector("select[name='gengou'] option:checked").value;
-	};
-
-	DateInput.prototype.getNen = function(){
-		return this.dom.querySelector("input[name='nen']").value;
-	};
-
-	DateInput.prototype.getMonth = function(){
-		return this.dom.querySelector("input[name='month']").value;
-	};
-
-	DateInput.prototype.getDay = function(){
-		return this.dom.querySelector("input[name='day']").value;
-	};
-
-	DateInput.prototype.getValues = function(){
-		return {
-			gengou: this.getGengou(),
-			nen: this.getNen(),
-			month: this.getMonth(),
-			day: this.getDay()
-		}
-	}
-
-	DateInput.prototype.getSqlDate = function(){
-		var values = this.getValues();
-		this.errors = [];
-		if( values.nen === "" && values.month === "" && values.day === "" ){
-			return "0000-00-00";
-		}
-		var gengou = values.gengou;
-		var nen, month, day;
-		if( values.nen === "" ){
-			this.errors.push("年が入力されていません。");
-		} else if( !values.nen.match(/^\d+$/) ){
-			this.errors.push("年の入力が不適切です。");	
-		} else {
-			nen = +values.nen;
-		}
-		if( values.month === "" ){
-			this.errors.push("月が入力されていません。");
-		} else if( !values.month.match(/^\d+$/) ){
-			this.errors.push("月の入力が不適切です。");	
-		} else {
-			month = +values.month;
-		}
-		if( values.day === "" ){
-			this.errors.push("日が入力されていません。");
-		} else if( !values.day.match(/^\d+$/) ){
-			this.errors.push("日の入力が不適切です。");	
-		} else {
-			day = +values.day;
-		}
-		var year = kanjidate.fromGengou(gengou, nen);
-		var m = moment({year: year, month: month-1, day: day});
-		if( values.nen !== "" && values.month !== "" && values.day !== "" && !m.isValid() ){
-			this.errors.push("日付が適切でありません。");
-		}
-		if( this.errors.length > 0 ){
-			return null;
-		}
-		return m.format("YYYY-MM-DD");
-	};
-
-	module.exports = DateInput;
-
 
 /***/ },
 /* 144 */
@@ -19084,7 +19148,7 @@
 	var hogan = __webpack_require__(2);
 	var tmplSrc = __webpack_require__(145);
 	var tmpl = hogan.compile(tmplSrc);
-	var mUtil = __webpack_require__(136);
+	var mUtil = __webpack_require__(138);
 	var kanjidate = __webpack_require__(15);
 	var rUtil = __webpack_require__(14);
 
@@ -19210,7 +19274,7 @@
 	var hogan = __webpack_require__(2);
 	var tmplSrc = __webpack_require__(148);
 	var tmpl = hogan.compile(tmplSrc);
-	var mUtil = __webpack_require__(136);
+	var mUtil = __webpack_require__(138);
 	var rUtil = __webpack_require__(14);
 	var Detail = __webpack_require__(149);
 	var Form = __webpack_require__(151);
@@ -19369,9 +19433,9 @@
 	var tmplSrc = __webpack_require__(152);
 	var tmpl = hogan.compile(tmplSrc);
 	var rUtil = __webpack_require__(14);
-	var dateInputTmplSrc = __webpack_require__(142);
+	var dateInputTmplSrc = __webpack_require__(136);
 	var dateInputTmpl = hogan.compile(dateInputTmplSrc);
-	var DateInput = __webpack_require__(143);
+	var DateInput = __webpack_require__(137);
 	var conti = __webpack_require__(10);
 	var service = __webpack_require__(7);
 
@@ -19578,7 +19642,7 @@
 	var hogan = __webpack_require__(2);
 	var tmplSrc = __webpack_require__(155);
 	var tmpl = hogan.compile(tmplSrc);
-	var mUtil = __webpack_require__(136);
+	var mUtil = __webpack_require__(138);
 	var rUtil = __webpack_require__(14);
 	var Detail = __webpack_require__(156);
 	var Form = __webpack_require__(158);
@@ -19741,9 +19805,9 @@
 	var tmplSrc = __webpack_require__(159);
 	var tmpl = hogan.compile(tmplSrc);
 	var rUtil = __webpack_require__(14);
-	var dateInputTmplSrc = __webpack_require__(142);
+	var dateInputTmplSrc = __webpack_require__(136);
 	var dateInputTmpl = hogan.compile(dateInputTmplSrc);
-	var DateInput = __webpack_require__(143);
+	var DateInput = __webpack_require__(137);
 	var conti = __webpack_require__(10);
 	var service = __webpack_require__(7);
 
@@ -19952,7 +20016,7 @@
 	var hogan = __webpack_require__(2);
 	var tmplSrc = __webpack_require__(162);
 	var tmpl = hogan.compile(tmplSrc);
-	var mUtil = __webpack_require__(136);
+	var mUtil = __webpack_require__(138);
 	var rUtil = __webpack_require__(14);
 	var Detail = __webpack_require__(163);
 	var Form = __webpack_require__(165);
@@ -20114,9 +20178,9 @@
 	var tmplSrc = __webpack_require__(166);
 	var tmpl = hogan.compile(tmplSrc);
 	var rUtil = __webpack_require__(14);
-	var dateInputTmplSrc = __webpack_require__(142);
+	var dateInputTmplSrc = __webpack_require__(136);
 	var dateInputTmpl = hogan.compile(dateInputTmplSrc);
-	var DateInput = __webpack_require__(143);
+	var DateInput = __webpack_require__(137);
 	var conti = __webpack_require__(10);
 	var service = __webpack_require__(7);
 

@@ -6,6 +6,8 @@ var dispTmpl = hogan.compile(dispTmplSrc);
 var rUtil = require("../reception-util.js");
 var Subpanel = require("./subpanel.js");
 var Form = require("./patient-form.js");
+var conti = require("conti");
+var service = require("myclinic-service-api");
 
 exports.setup = function(wrapper, patient){
 	var sub = Subpanel.create("基本情報", function(subdom){
@@ -28,7 +30,7 @@ function createDisp(patient){
 	dom.querySelector(".edit-basic").addEventListener("click", function(){
 		var form = Form.create(patient, {
 			onEnter: function(values){
-				console.log("VALUES", values);
+				doEnter(dom, form, patient, values);
 			},
 			onCancel: function(){
 				rUtil.removeNode(form);
@@ -42,4 +44,34 @@ function createDisp(patient){
 	});
 	return dom;
 };
+
+function doEnter(dom, form, patient, values){
+	values.patient_id = patient.patient_id;
+	var updatedPatient;
+	conti.exec([
+		function(done){
+			service.updatePatient(values, done);
+		},
+		function(done){
+			service.getPatient(patient.patient_id, function(err, result){
+				if( err ){
+					done(err);
+					return;
+				}
+				updatedPatient = result;
+				done();
+			});
+		}
+	], function(err){
+		if( err ){
+			alert(err);
+			return;
+		}
+		rUtil.removeNode(form);
+		var newDom = createDisp(updatedPatient);
+		dom.parentNode.replaceChild(newDom, dom);
+	});
+}
+
+
 
