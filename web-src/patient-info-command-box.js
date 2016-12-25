@@ -20,9 +20,10 @@ exports.create = function(patient, callbacks){
 			callbacks.onNewKouhi();
 		}
 	});
-	dom.querySelector(".edit-all-hoken").addEventListener("click", function(){
-		if( callbacks.onEditAllHoken ){
-			callbacks.onEditAllHoken();
+	dom.addEventListener("change", function(event){
+		var target = event.target;
+		if( target.name === "hoken-list-type" ){
+			callbacks.onHokenListChange(target.value);
 		}
 	});
 	dom.querySelector(".start-visit").addEventListener("click", function(){
@@ -37,3 +38,4 @@ exports.create = function(patient, callbacks){
 	});
 	return dom;
 };
+

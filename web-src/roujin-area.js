@@ -5,6 +5,7 @@ var Subpanel = require("./subpanel.js");
 var rUtil = require("../reception-util.js");
 
 exports.setup = function(wrapper, hoken_list, patient){
+	wrapper.innerHTML = "";
 	var sub = Subpanel.create("老人保険", function(subdom){
 		hoken_list.forEach(function(hoken){
 			var disp = Disp.create(hoken, patient);

@@ -16,6 +16,7 @@ var tmplSrc = require("raw!./patient-info.html");
 var conti = require("conti");
 var service = require("myclinic-service-api");
 var rUtil = require("../reception-util.js");
+var moment = require("moment");
 
 exports.add = function(data){
 	var patient = data.patient;
@@ -25,10 +26,7 @@ exports.add = function(data){
 	Panel.add(title, function(dom, wrapper){
 		dom.innerHTML = tmplSrc;
 		BasicInfo.setup(dom.querySelector(".basic-info-wrapper"), patient);
-		ShahokokuhoArea.setup(dom.querySelector(".shahokokuho-wrapper"), hoken.shahokokuho_list, patient);
-		KoukikoureiArea.setup(dom.querySelector(".koukikourei-wrapper"), hoken.koukikourei_list, patient);
-		RoujinArea.setup(dom.querySelector(".roujin-wrapper"), hoken.roujin_list, patient);
-		KouhiArea.setup(dom.querySelector(".kouhi-wrapper"), hoken.kouhi_list, patient);
+		setupHoken(dom, hoken, patient);
 		var commandBox = CommandBox.create(patient.patient_id, {
 			onNewShahokokuho: function(){
 				newShahokokuho(patient, wrapper);
@@ -39,12 +37,17 @@ exports.add = function(data){
 			onNewKouhi: function(){
 				newKouhi(patient, wrapper);
 			},
-			onEditAllHoken: function(){
-				console.log("edit-all-hoken");
+			onHokenListChange: function(value){
+				fetchHokenList(patient.patient_id, value, function(err, result){
+					if( err ){
+						alert(err);
+						return;
+					}
+					setupHoken(dom, result, patient);
+				});
 			},
 			onStartVisit: function(){
 				console.log("start-visit");
-
 			},
 			onClose: function(){
 				wrapper.parentNode.removeChild(wrapper);	
@@ -53,6 +56,49 @@ exports.add = function(data){
 		dom.appendChild(commandBox);
 	});
 };
+
+function setupHoken(dom, hoken, patient){
+	ShahokokuhoArea.setup(dom.querySelector(".shahokokuho-wrapper"), hoken.shahokokuho_list, patient);
+	KoukikoureiArea.setup(dom.querySelector(".koukikourei-wrapper"), hoken.koukikourei_list, patient);
+	RoujinArea.setup(dom.querySelector(".roujin-wrapper"), hoken.roujin_list, patient);
+	KouhiArea.setup(dom.querySelector(".kouhi-wrapper"), hoken.kouhi_list, patient);
+}
+
+function fetchHokenList(patientId, mode, cb){
+	switch(mode){
+		case "current": fetchCurrentHoken(patientId, cb); return;
+		case "3-years": fetchHoken3Years(patientId, cb); return;
+		case "all": fetchAllHoken(patientId, cb); return;
+		default: alert("invalid mode: " + mode); return;
+	}
+}
+
+function fetchCurrentHoken(patientId, cb){
+	var at = rUtil.todayAsSqlDate();
+	service.listAvailableHoken(patientId, at, cb);
+}
+
+function fetchHoken3Years(patientId, cb){
+	service.listAllHoken(patientId, function(err, result){
+		if( err ){
+			cb(err);
+			return;
+		}
+		var at = moment().subtract(3, "years").format("YYYY-MM-DD");	
+		var hoken = {};
+		["shahokokuho_list", "koukikourei_list", "roujin_list", "kouhi_list"].forEach(function(key){
+			hoken[key] = result[key].filter(function(item){
+				return item.valid_from >= at ||
+					(item.valid_upto === "0000-00-00" || item.valid_upto >= at)
+			});
+		});
+		cb(undefined, hoken);
+	});
+}
+
+function fetchAllHoken(patientId, cb){
+	service.listAllHoken(patientId, cb);
+}
 
 function newShahokokuho(patient, wrapper){
 	var sub = Subpanel.create("新規社保・国保入力", function(dom){

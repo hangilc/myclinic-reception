@@ -36,3 +36,7 @@ table.info-table tr td:first-child { color:#666; }
 	border: 1px solid #999;
 	padding: 4px;
 }
+
+.hoken-list-switch {
+	font-size: 13px;
+}

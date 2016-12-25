@@ -1844,6 +1844,10 @@
 		request("list_kouhi", { patient_id: patientId }, "GET", cb);
 	};
 
+	exports.listAllHoken = function(patientId, cb){
+		request("list_all_hoken", { patient_id: patientId }, "GET", cb);
+	};
+
 	exports.listRecentlyEnteredPatients = function(n, cb){
 		request("list_recently_entered_patients", {n : n}, "GET", cb);
 	};
@@ -18131,6 +18135,7 @@
 	var conti = __webpack_require__(10);
 	var service = __webpack_require__(7);
 	var rUtil = __webpack_require__(14);
+	var moment = __webpack_require__(16);
 
 	exports.add = function(data){
 		var patient = data.patient;
@@ -18140,10 +18145,7 @@
 		Panel.add(title, function(dom, wrapper){
 			dom.innerHTML = tmplSrc;
 			BasicInfo.setup(dom.querySelector(".basic-info-wrapper"), patient);
-			ShahokokuhoArea.setup(dom.querySelector(".shahokokuho-wrapper"), hoken.shahokokuho_list, patient);
-			KoukikoureiArea.setup(dom.querySelector(".koukikourei-wrapper"), hoken.koukikourei_list, patient);
-			RoujinArea.setup(dom.querySelector(".roujin-wrapper"), hoken.roujin_list, patient);
-			KouhiArea.setup(dom.querySelector(".kouhi-wrapper"), hoken.kouhi_list, patient);
+			setupHoken(dom, hoken, patient);
 			var commandBox = CommandBox.create(patient.patient_id, {
 				onNewShahokokuho: function(){
 					newShahokokuho(patient, wrapper);
@@ -18154,12 +18156,17 @@
 				onNewKouhi: function(){
 					newKouhi(patient, wrapper);
 				},
-				onEditAllHoken: function(){
-					console.log("edit-all-hoken");
+				onHokenListChange: function(value){
+					fetchHokenList(patient.patient_id, value, function(err, result){
+						if( err ){
+							alert(err);
+							return;
+						}
+						setupHoken(dom, result, patient);
+					});
 				},
 				onStartVisit: function(){
 					console.log("start-visit");
-
 				},
 				onClose: function(){
 					wrapper.parentNode.removeChild(wrapper);	
@@ -18168,6 +18175,49 @@
 			dom.appendChild(commandBox);
 		});
 	};
+
+	function setupHoken(dom, hoken, patient){
+		ShahokokuhoArea.setup(dom.querySelector(".shahokokuho-wrapper"), hoken.shahokokuho_list, patient);
+		KoukikoureiArea.setup(dom.querySelector(".koukikourei-wrapper"), hoken.koukikourei_list, patient);
+		RoujinArea.setup(dom.querySelector(".roujin-wrapper"), hoken.roujin_list, patient);
+		KouhiArea.setup(dom.querySelector(".kouhi-wrapper"), hoken.kouhi_list, patient);
+	}
+
+	function fetchHokenList(patientId, mode, cb){
+		switch(mode){
+			case "current": fetchCurrentHoken(patientId, cb); return;
+			case "3-years": fetchHoken3Years(patientId, cb); return;
+			case "all": fetchAllHoken(patientId, cb); return;
+			default: alert("invalid mode: " + mode); return;
+		}
+	}
+
+	function fetchCurrentHoken(patientId, cb){
+		var at = rUtil.todayAsSqlDate();
+		service.listAvailableHoken(patientId, at, cb);
+	}
+
+	function fetchHoken3Years(patientId, cb){
+		service.listAllHoken(patientId, function(err, result){
+			if( err ){
+				cb(err);
+				return;
+			}
+			var at = moment().subtract(3, "years").format("YYYY-MM-DD");	
+			var hoken = {};
+			["shahokokuho_list", "koukikourei_list", "roujin_list", "kouhi_list"].forEach(function(key){
+				hoken[key] = result[key].filter(function(item){
+					return item.valid_from >= at ||
+						(item.valid_upto === "0000-00-00" || item.valid_upto >= at)
+				});
+			});
+			cb(undefined, hoken);
+		});
+	}
+
+	function fetchAllHoken(patientId, cb){
+		service.listAllHoken(patientId, cb);
+	}
 
 	function newShahokokuho(patient, wrapper){
 		var sub = Subpanel.create("新規社保・国保入力", function(dom){
@@ -18797,6 +18847,7 @@
 	var Subpanel = __webpack_require__(130);
 	var rUtil = __webpack_require__(14);
 
+	/**
 	exports.render = function(dom, shahokokuhoList, patient){
 		shahokokuhoList.forEach(function(hoken){
 			var node = Disp.create(hoken, patient);
@@ -18811,8 +18862,10 @@
 			dom.appendChild(node);
 		});
 	};
+	**/
 
 	exports.setup = function(wrapper, hoken_list, patient){
+		wrapper.innerHTML = "";
 		var sub = Subpanel.create("社保・国保", function(subdom){
 			hoken_list.forEach(function(hoken){
 				var disp = Disp.create(hoken, patient);
@@ -19219,6 +19272,7 @@
 	var rUtil = __webpack_require__(14);
 
 	exports.setup = function(wrapper, hoken_list, patient){
+		wrapper.innerHTML = "";
 		var sub = Subpanel.create("後期高齢", function(subdom){
 			hoken_list.forEach(function(hoken){
 				var disp = Disp.create(hoken, patient);
@@ -19588,6 +19642,7 @@
 	var rUtil = __webpack_require__(14);
 
 	exports.setup = function(wrapper, hoken_list, patient){
+		wrapper.innerHTML = "";
 		var sub = Subpanel.create("老人保険", function(subdom){
 			hoken_list.forEach(function(hoken){
 				var disp = Disp.create(hoken, patient);
@@ -19960,6 +20015,7 @@
 	var rUtil = __webpack_require__(14);
 
 	exports.setup = function(wrapper, hoken_list, patient){
+		wrapper.innerHTML = "";
 		var sub = Subpanel.create("公費", function(subdom){
 			hoken_list.forEach(function(hoken){
 				var disp = Disp.create(hoken, patient);
@@ -20328,9 +20384,10 @@
 				callbacks.onNewKouhi();
 			}
 		});
-		dom.querySelector(".edit-all-hoken").addEventListener("click", function(){
-			if( callbacks.onEditAllHoken ){
-				callbacks.onEditAllHoken();
+		dom.addEventListener("change", function(event){
+			var target = event.target;
+			if( target.name === "hoken-list-type" ){
+				callbacks.onHokenListChange(target.value);
 			}
 		});
 		dom.querySelector(".start-visit").addEventListener("click", function(){
@@ -20347,11 +20404,12 @@
 	};
 
 
+
 /***/ },
 /* 168 */
 /***/ function(module, exports) {
 
-	module.exports = "<div>\r\n\t<hr style=\"border-top: 1px #999 solid\"/>\r\n\t<div style=\"margin:6px 4px\" data-role=\"patient-info-commands\">\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link new-shahokokuho\">社保・国保追加</a>\r\n\t\t|\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link new-koukikourei\">後期高齢追加</a>\r\n\t\t|\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link new-kouhi\">公費追加</a>\r\n\t\t|\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link edit-all-hoken\">全保険編集</a>\r\n\t</div>\r\n\t<div class=\"command-box\">\r\n\t\t<button class=\"start-visit\">診察受付</button>\r\n\t\t<button type=\"button\" class=\"close-panel\">閉じる</button>\r\n\t</div>\r\n</div>\r\n"
+	module.exports = "<div>\r\n\t<hr style=\"border-top: 1px #999 solid\"/>\r\n\t<div style=\"margin:6px 4px\" data-role=\"patient-info-commands\">\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link new-shahokokuho\">社保・国保追加</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link new-koukikourei\">後期高齢追加</a> |\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link new-kouhi\">公費追加</a>\r\n\t</div>\r\n\t<div class=\"hoken-list-switch\">\r\n\t\t<form>\r\n\t\t\t<input type=\"radio\" name=\"hoken-list-type\" value=\"current\" checked> 現在有効の保険\r\n\t\t\t<input type=\"radio\" name=\"hoken-list-type\" value=\"3-years\"> 過去３年の保険\r\n\t\t\t<input type=\"radio\" name=\"hoken-list-type\" value=\"all\"> すべての保険\r\n\t\t</form>\r\n\t</div>\r\n\t<div class=\"command-box\">\r\n\t\t<button class=\"start-visit\">診察受付</button>\r\n\t\t<button type=\"button\" class=\"close-panel\">閉じる</button>\r\n\t</div>\r\n</div>\r\n"
 
 /***/ },
 /* 169 */
