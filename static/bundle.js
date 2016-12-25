@@ -51,12 +51,17 @@
 	var StartVisit = __webpack_require__(12);
 	var Util = __webpack_require__(14);
 	var PatientInfo = __webpack_require__(127);
+	var NewPatientPanel = __webpack_require__(170);
+	var Panel = __webpack_require__(128);
 
 	var domUpdateWqueueButton = document.getElementById("update-wqueue-button");
 	var domWqueueTable = document.getElementById("wqueue-table");
 	var domPatientIdInput = document.getElementById("patient-id-input");
 	var domStartVisitButton = document.getElementById("start-visit-button");
 	var domPatientInfoLink = document.querySelector(".patient-info-button");
+	var domNewPatientLink = document.querySelector(".new-patient-button");
+	var domRecentlyEnteredPatientsLink = document.querySelector(".recently-registered-patients");
+	var domSearchPatientsLink = document.querySelector(".search-patient");
 
 	updateWqueue();
 
@@ -177,6 +182,19 @@
 			cb(undefined, data);
 		});
 	}
+
+	domNewPatientLink.addEventListener("click", function(){
+		var panel = NewPatientPanel.create();
+		Panel.prepend(panel);
+	});
+
+	domRecentlyEnteredPatientsLink.addEventListener("click", function(){
+		console.log("RECENTLY-ENTERED-PATIENTS");
+	});
+
+	domSearchPatientsLink.addEventListener("click", function(){
+		console.log("SEARCH-PATIENTS");
+	});
 
 	function broadcast(selector, event){
 		var doms = document.querySelectorAll(selector);
@@ -2830,6 +2848,13 @@
 		node.parentNode.removeChild(node);
 	};
 
+	exports.prepend = function(wrapper, dom){
+		if( wrapper.firstChild ){
+			wrapper.insertBefore(dom, wrapper.firstChild);
+		} else {
+			wrapper.appendChild(dom);
+		}
+	};
 
 
 /***/ },
@@ -18121,6 +18146,8 @@
 /* 127 */
 /***/ function(module, exports, __webpack_require__) {
 
+	"use strict";
+
 	var Panel = __webpack_require__(128);
 	var Subpanel = __webpack_require__(130);
 	var hogan = __webpack_require__(2);
@@ -18144,21 +18171,20 @@
 	exports.add = function(data){
 		var patient = data.patient;
 		var hoken = data.hoken;
-		var sub;
 		var title = "患者情報（" + patient.last_name + patient.first_name + "）";
-		Panel.add(title, function(dom, wrapper){
+		var panel = Panel.create(title, function(dom){
 			dom.innerHTML = tmplSrc;
 			BasicInfo.setup(dom.querySelector(".basic-info-wrapper"), patient);
 			setupHoken(dom, hoken, patient);
 			var commandBox = CommandBox.create(patient.patient_id, {
 				onNewShahokokuho: function(){
-					newShahokokuho(patient, wrapper);
+					newShahokokuho(patient, panel);
 				},
 				onNewKoukikourei: function(){
-					newKoukikourei(patient, wrapper);
+					newKoukikourei(patient, panel);
 				},
 				onNewKouhi: function(){
-					newKouhi(patient, wrapper);
+					newKouhi(patient, panel);
 				},
 				onHokenListChange: function(value){
 					fetchHokenList(patient.patient_id, value, function(err, result){
@@ -18172,16 +18198,17 @@
 				onStartVisit: function(){
 					service.startVisit(patient.patient_id, rUtil.nowAsSqlDateTime(), function(err){
 						var e = new Event("new-visit", { bubbles: true });
-						wrapper.dispatchEvent(e);
-						rUtil.removeNode(wrapper);
+						panel.dispatchEvent(e);
+						rUtil.removeNode(panel);
 					});
 				},
 				onClose: function(){
-					wrapper.parentNode.removeChild(wrapper);	
+					panel.parentNode.removeChild(panel);	
 				}
 			});
 			dom.appendChild(commandBox);
 		});
+		Panel.prepend(panel);
 	};
 
 	function setupHoken(dom, hoken, patient){
@@ -18383,19 +18410,22 @@
 	var hogan = __webpack_require__(2);
 	var tmplSrc = __webpack_require__(129);
 	var tmpl = hogan.compile(tmplSrc);
+	var rUtil = __webpack_require__(14);
 
 	var container = document.querySelector(".workarea-panel-container");
 
-	exports.add = function(title, render){
-		var dom = document.createElement("div");
-		dom.innerHTML = tmpl.render({ title: title });
-		render(dom.querySelector(".content"), dom.firstChild);
-		if( container.firstChild ){
-			container.insertBefore(dom.firstChild, container.firstChild);
-		} else {
-			container.appendChild(dom.firstChild);
-		}
-		dom.innerHTML = "";
+	exports.create = function(title, render){
+		var dom = rUtil.makeNode(tmpl.render({ title: title }));
+		render(dom.querySelector(".content"), dom);
+		return dom;
+	};
+
+	exports.prepend = function(panel){
+		rUtil.prepend(container, panel);
+	};
+
+	exports.append = function(panel){
+		container.appendChild(panel);
 	};
 
 
@@ -18547,6 +18577,9 @@
 		if( patient.birth_day && patient.birth_day !== "0000-00-00" ){
 			var dateInput = new DateInput(dom.querySelector(".birth-day-element"));		
 			dateInput.set(patient.birth_day);
+		} else {
+			var dateInput = new DateInput(dom.querySelector(".birth-day-element"));		
+			dateInput.setGengou("昭和");
 		}
 		dom.querySelector(".enter").addEventListener("click", function(){
 			var errs = [];
@@ -20407,6 +20440,32 @@
 /***/ function(module, exports) {
 
 	module.exports = "<div class=\"basic-info-wrapper\"></div>\r\n<div class=\"shahokokuho-wrapper\"></div>\r\n<div class=\"koukikourei-wrapper\"></div>\r\n<div class=\"roujin-wrapper\"></div>\r\n<div class=\"kouhi-wrapper\"></div>\r\n<div class=\"command-wrapper\"></div>\r\n"
+
+/***/ },
+/* 170 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	var Panel = __webpack_require__(128);
+	var Subpanel = __webpack_require__(130);
+	var PatientForm = __webpack_require__(134);
+	var rUtil = __webpack_require__(14);
+
+	exports.create = function(){
+		return Panel.create("新規患者入力", function(dom, panel){
+			var patient = {
+				sex: "F"
+			};
+			var form = PatientForm.create(patient, {
+				onCancel: function(){
+					rUtil.removeNode(panel);	
+				}
+			});
+			dom.appendChild(form);
+		});
+	};
+
 
 /***/ }
 /******/ ]);

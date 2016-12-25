@@ -1,3 +1,5 @@
+"use strict";
+
 var Panel = require("./panel.js");
 var Subpanel = require("./subpanel.js");
 var hogan = require("hogan.js");
@@ -21,21 +23,20 @@ var moment = require("moment");
 exports.add = function(data){
 	var patient = data.patient;
 	var hoken = data.hoken;
-	var sub;
 	var title = "患者情報（" + patient.last_name + patient.first_name + "）";
-	Panel.add(title, function(dom, wrapper){
+	var panel = Panel.create(title, function(dom){
 		dom.innerHTML = tmplSrc;
 		BasicInfo.setup(dom.querySelector(".basic-info-wrapper"), patient);
 		setupHoken(dom, hoken, patient);
 		var commandBox = CommandBox.create(patient.patient_id, {
 			onNewShahokokuho: function(){
-				newShahokokuho(patient, wrapper);
+				newShahokokuho(patient, panel);
 			},
 			onNewKoukikourei: function(){
-				newKoukikourei(patient, wrapper);
+				newKoukikourei(patient, panel);
 			},
 			onNewKouhi: function(){
-				newKouhi(patient, wrapper);
+				newKouhi(patient, panel);
 			},
 			onHokenListChange: function(value){
 				fetchHokenList(patient.patient_id, value, function(err, result){
@@ -49,16 +50,17 @@ exports.add = function(data){
 			onStartVisit: function(){
 				service.startVisit(patient.patient_id, rUtil.nowAsSqlDateTime(), function(err){
 					var e = new Event("new-visit", { bubbles: true });
-					wrapper.dispatchEvent(e);
-					rUtil.removeNode(wrapper);
+					panel.dispatchEvent(e);
+					rUtil.removeNode(panel);
 				});
 			},
 			onClose: function(){
-				wrapper.parentNode.removeChild(wrapper);	
+				panel.parentNode.removeChild(panel);	
 			}
 		});
 		dom.appendChild(commandBox);
 	});
+	Panel.prepend(panel);
 };
 
 function setupHoken(dom, hoken, patient){

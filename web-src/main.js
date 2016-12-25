@@ -5,12 +5,17 @@ var modal = require("../myclinic-modal.js");
 var StartVisit = require("./start-visit.js");
 var Util = require("../reception-util.js");
 var PatientInfo = require("./patient-info.js");
+var NewPatientPanel = require("./new-patient-panel.js");
+var Panel = require("./panel");
 
 var domUpdateWqueueButton = document.getElementById("update-wqueue-button");
 var domWqueueTable = document.getElementById("wqueue-table");
 var domPatientIdInput = document.getElementById("patient-id-input");
 var domStartVisitButton = document.getElementById("start-visit-button");
 var domPatientInfoLink = document.querySelector(".patient-info-button");
+var domNewPatientLink = document.querySelector(".new-patient-button");
+var domRecentlyEnteredPatientsLink = document.querySelector(".recently-registered-patients");
+var domSearchPatientsLink = document.querySelector(".search-patient");
 
 updateWqueue();
 
@@ -131,6 +136,19 @@ function fetchPatientInfo(patientId, at, cb){
 		cb(undefined, data);
 	});
 }
+
+domNewPatientLink.addEventListener("click", function(){
+	var panel = NewPatientPanel.create();
+	Panel.prepend(panel);
+});
+
+domRecentlyEnteredPatientsLink.addEventListener("click", function(){
+	console.log("RECENTLY-ENTERED-PATIENTS");
+});
+
+domSearchPatientsLink.addEventListener("click", function(){
+	console.log("SEARCH-PATIENTS");
+});
 
 function broadcast(selector, event){
 	var doms = document.querySelectorAll(selector);

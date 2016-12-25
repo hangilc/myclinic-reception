@@ -22,6 +22,9 @@ exports.create = function(patient, callbacks){
 	if( patient.birth_day && patient.birth_day !== "0000-00-00" ){
 		var dateInput = new DateInput(dom.querySelector(".birth-day-element"));		
 		dateInput.set(patient.birth_day);
+	} else {
+		var dateInput = new DateInput(dom.querySelector(".birth-day-element"));		
+		dateInput.setGengou("昭和");
 	}
 	dom.querySelector(".enter").addEventListener("click", function(){
 		var errs = [];

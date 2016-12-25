@@ -60,3 +60,10 @@ exports.removeNode = function(node){
 	node.parentNode.removeChild(node);
 };
 
+exports.prepend = function(wrapper, dom){
+	if( wrapper.firstChild ){
+		wrapper.insertBefore(dom, wrapper.firstChild);
+	} else {
+		wrapper.appendChild(dom);
+	}
+};
