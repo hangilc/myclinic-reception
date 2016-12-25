@@ -3,9 +3,10 @@ var service = require("myclinic-service-api");
 var conti = require("conti");
 var modal = require("../myclinic-modal.js");
 var StartVisit = require("./start-visit.js");
-var Util = require("../reception-util.js");
+var rUtil = require("../reception-util.js");
 var PatientInfo = require("./patient-info.js");
 var NewPatientPanel = require("./new-patient-panel.js");
+var RecentlyEnteredPatientsPanel = require("./recently-registered-patients.js");
 var Panel = require("./panel");
 
 var domUpdateWqueueButton = document.getElementById("update-wqueue-button");
@@ -102,7 +103,7 @@ domPatientInfoLink.addEventListener("click", function(){
 		current.parentNode.removeChild(current);
 		Panel.prepend(current);
 	} else {
-		fetchPatientInfo(patientId, Util.todayAsSqlDate(), function(err, result){
+		fetchPatientInfo(patientId, rUtil.todayAsSqlDate(), function(err, result){
 			if( err ){
 				alert(err);
 				return;
@@ -156,7 +157,12 @@ domRecentlyEnteredPatientsLink.addEventListener("click", function(){
 			alert(err);
 			return;
 		}
-		console.log(result);
+		var panel = RecentlyEnteredPatientsPanel.create(result, {
+			onClose: function(){
+				rUtil.removeNode(panel);
+			}
+		});
+		Panel.prepend(panel);
 	});
 });
 

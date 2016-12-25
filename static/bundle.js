@@ -49,9 +49,10 @@
 	var conti = __webpack_require__(10);
 	var modal = __webpack_require__(11);
 	var StartVisit = __webpack_require__(12);
-	var Util = __webpack_require__(14);
+	var rUtil = __webpack_require__(14);
 	var PatientInfo = __webpack_require__(127);
 	var NewPatientPanel = __webpack_require__(170);
+	var RecentlyEnteredPatientsPanel = __webpack_require__(171);
 	var Panel = __webpack_require__(128);
 
 	var domUpdateWqueueButton = document.getElementById("update-wqueue-button");
@@ -148,7 +149,7 @@
 			current.parentNode.removeChild(current);
 			Panel.prepend(current);
 		} else {
-			fetchPatientInfo(patientId, Util.todayAsSqlDate(), function(err, result){
+			fetchPatientInfo(patientId, rUtil.todayAsSqlDate(), function(err, result){
 				if( err ){
 					alert(err);
 					return;
@@ -202,7 +203,12 @@
 				alert(err);
 				return;
 			}
-			console.log(result);
+			var panel = RecentlyEnteredPatientsPanel.create(result, {
+				onClose: function(){
+					rUtil.removeNode(panel);
+				}
+			});
+			Panel.prepend(panel);
 		});
 	});
 
@@ -2802,6 +2808,20 @@
 
 	var kanjidate = __webpack_require__(15);
 	var moment = __webpack_require__(16);
+
+	exports.padNumber = function(num, ncols, pad){
+		if( pad === undefined ){
+			pad = "0";
+		}
+		var rep = "" + num;
+		var rem = ncols - rep.length;
+		var lead = "";
+		while( rem > 0 ){
+			lead += pad;
+			rem--;
+		}
+		return lead + rep;
+	}
 
 	exports.birthdayAsKanji = function(birthday){
 		if( !birthday || birthday === "0000-00-00" ){
@@ -20507,6 +20527,68 @@
 		};
 	}
 
+
+/***/ },
+/* 171 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	var Panel = __webpack_require__(128);
+	var hogan = __webpack_require__(2);
+	var tmplSrc = __webpack_require__(172);
+	var tmpl = hogan.compile(tmplSrc);
+	var rUtil = __webpack_require__(14);
+
+	exports.create = function(patients, callbacks){
+		var panel = Panel.create("最近登録した患者", function(content){
+			var list = patients.map(function(patient){
+				var item = {};
+				Object.keys(patient).forEach(function(key){
+					item[key] = patient[key];
+					item.patient_id_rep = rUtil.padNumber(patient.patient_id, 4, "0");
+				});
+				return item;
+			});
+			var html = tmpl.render({ patients: list });
+			var dom = rUtil.makeNode(html);
+			dom.querySelector(".close").addEventListener("click", function(){
+				callbacks.onClose();
+			});
+			bindStartVisit(dom);
+			bindPatientInfo(dom);
+			content.appendChild(dom);
+		});
+		panel.classList.add("recently-entered-patients");
+		return panel;
+	};
+
+	function bindStartVisit(dom){
+		dom.addEventListener("click", function(event){
+			var target = event.target;
+			if( target.tagName === "A" && target.classList.contains("start-visit") ){
+				var patientId = target.getAttribute("data-patient-id");
+				console.log("start-visit", patientId);
+			}
+		});
+	};
+
+	function bindPatientInfo(dom){
+		dom.addEventListener("click", function(event){
+			var target = event.target;
+			if( target.tagName === "A" && target.classList.contains("patient-info") ){
+				var patientId = target.getAttribute("data-patient-id");
+				console.log("patient-info", patientId);
+			}
+		});
+	};
+
+
+/***/ },
+/* 172 */
+/***/ function(module, exports) {
+
+	module.exports = "<div style=\"margin:6px 0\">\r\n\t<div class=\"patients-list\">\r\n\t{{#patients}}\r\n\t\t<div style=\"margin:4px;\">\r\n\t\t[{{patient_id_rep}}] {{last_name}} {{first_name}}\r\n\t\t({{last_name_yomi}} {{first_name_yomi}})\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link start-visit\" data-patient-id=\"{{patient_id}}\">診察受付</a>\r\n\t\t|\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link patient-info\" data-patient-id=\"{{patient_id}}\">患者情報</a>\r\n\t\t</div>\r\n\t{{/patients}}\r\n\t</div>\r\n\t<hr />\r\n\t<div>\r\n\t\t<button class=\"close\">閉じる</button>\r\n\t</div>\r\n</div>\r\n"
 
 /***/ }
 /******/ ]);

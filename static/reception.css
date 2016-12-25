@@ -22,6 +22,11 @@ table.info-table tr td:first-child { color:#666; }
 	padding: 4px;
 	font-weight: bold;
 }
+
+.workarea-panel.recently-entered-patients .patients-list {
+	font-size: 85%;
+}
+
 .error {
 	border: 1px solid red;
 	margin: 4px;

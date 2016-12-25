@@ -1,17 +1,17 @@
-
-	<div style="margin:6px 0">
-		{{#patients}}
-			<div style="margin:4px;">
-			[{{patient_id}}] {{last_name}} {{first_name}}
-			({{last_name_yomi}} {{first_name_yomi}})
-			<a href="javascript:void(0)" class="cmd-link patient-info" patient-id="{{patient_id}}">患者情報</a>
-			|
-			<a href="javascript:void(0)" class="cmd-link delete-patient" patient-id="{{patient_id}}"
-				patient-name="{{last_name}} {{first_name}}">削除</a>
-			</div>
-		{{/patients}}
-		<hr />
-		<div>
-			<button class="close">閉じる</button>
+<div style="margin:6px 0">
+	<div class="patients-list">
+	{{#patients}}
+		<div style="margin:4px;">
+		[{{patient_id_rep}}] {{last_name}} {{first_name}}
+		({{last_name_yomi}} {{first_name_yomi}})
+		<a href="javascript:void(0)" class="cmd-link start-visit" data-patient-id="{{patient_id}}">診察受付</a>
+		|
+		<a href="javascript:void(0)" class="cmd-link patient-info" data-patient-id="{{patient_id}}">患者情報</a>
 		</div>
+	{{/patients}}
 	</div>
+	<hr />
+	<div>
+		<button class="close">閉じる</button>
+	</div>
+</div>

@@ -1,6 +1,20 @@
 var kanjidate = require("kanjidate");
 var moment = require("moment");
 
+exports.padNumber = function(num, ncols, pad){
+	if( pad === undefined ){
+		pad = "0";
+	}
+	var rep = "" + num;
+	var rem = ncols - rep.length;
+	var lead = "";
+	while( rem > 0 ){
+		lead += pad;
+		rem--;
+	}
+	return lead + rep;
+}
+
 exports.birthdayAsKanji = function(birthday){
 	if( !birthday || birthday === "0000-00-00" ){
 		return "???";
