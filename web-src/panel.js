@@ -18,3 +18,5 @@ exports.prepend = function(panel){
 exports.append = function(panel){
 	container.appendChild(panel);
 };
+
+exports.container = container;

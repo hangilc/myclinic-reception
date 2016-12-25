@@ -58,6 +58,8 @@ exports.create = function(patient, hoken){
 		});
 		dom.appendChild(commandBox);
 	});
+	panel.classList.add("patient-info");
+	panel.setAttribute("data-patient-id", patient.patient_id);
 	return panel;
 };
 

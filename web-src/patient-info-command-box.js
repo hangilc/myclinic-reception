@@ -26,7 +26,8 @@ exports.create = function(patient, callbacks){
 			callbacks.onHokenListChange(target.value);
 		}
 	});
-	dom.querySelector(".start-visit").addEventListener("click", function(){
+	dom.querySelector(".start-visit").addEventListener("click", function(event){
+		event.target.disabled = true;
 		if( callbacks.onStartVisit ){
 			callbacks.onStartVisit();
 		}

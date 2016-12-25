@@ -142,13 +142,21 @@
 			return;
 		}
 		patientId = +patientId;
-		fetchPatientInfo(patientId, Util.todayAsSqlDate(), function(err, result){
-			if( err ){
-				alert(err);
-				return;
-			}
-			Panel.prepend(PatientInfo.create(result.patient, result.hoken));
-		});
+		var seltor = ".workarea-panel.patient-info[data-patient-id='" + patientId + "']";
+		var current = Panel.container.querySelector(seltor);
+		if( current ){
+			current.parentNode.removeChild(current);
+			Panel.prepend(current);
+		} else {
+			fetchPatientInfo(patientId, Util.todayAsSqlDate(), function(err, result){
+				if( err ){
+					alert(err);
+					return;
+				}
+				domPatientIdInput.value = "";
+				Panel.prepend(PatientInfo.create(result.patient, result.hoken));
+			});
+		}
 	});
 
 	function fetchPatientInfo(patientId, at, cb){
@@ -189,7 +197,13 @@
 	});
 
 	domRecentlyEnteredPatientsLink.addEventListener("click", function(){
-		console.log("RECENTLY-ENTERED-PATIENTS");
+		service.listRecentlyEnteredPatients(20, function(err, result){
+			if( err ){
+				alert(err);
+				return;
+			}
+			console.log(result);
+		});
 	});
 
 	domSearchPatientsLink.addEventListener("click", function(){
@@ -18206,6 +18220,8 @@
 			});
 			dom.appendChild(commandBox);
 		});
+		panel.classList.add("patient-info");
+		panel.setAttribute("data-patient-id", patient.patient_id);
 		return panel;
 	};
 
@@ -18425,6 +18441,8 @@
 	exports.append = function(panel){
 		container.appendChild(panel);
 	};
+
+	exports.container = container;
 
 
 /***/ },
@@ -20414,7 +20432,8 @@
 				callbacks.onHokenListChange(target.value);
 			}
 		});
-		dom.querySelector(".start-visit").addEventListener("click", function(){
+		dom.querySelector(".start-visit").addEventListener("click", function(event){
+			event.target.disabled = true;
 			if( callbacks.onStartVisit ){
 				callbacks.onStartVisit();
 			}
