@@ -7,6 +7,7 @@ var rUtil = require("../reception-util.js");
 var PatientInfo = require("./patient-info.js");
 var NewPatientPanel = require("./new-patient-panel.js");
 var RecentlyEnteredPatientsPanel = require("./recently-registered-patients.js");
+var SearchPatient = require("./search-patient.js");
 var Panel = require("./panel");
 
 var domUpdateWqueueButton = document.getElementById("update-wqueue-button");
@@ -213,7 +214,12 @@ domRecentlyEnteredPatientsLink.addEventListener("click", function(){
 });
 
 domSearchPatientsLink.addEventListener("click", function(){
-	console.log("SEARCH-PATIENTS");
+	var search = SearchPatient.create();
+	var panel = Panel.create("患者検索", function(content){
+		var search = SearchPatient.create();
+		content.appendChild(search);
+	});
+	Panel.prepend(panel);
 });
 
 function broadcast(selector, event){

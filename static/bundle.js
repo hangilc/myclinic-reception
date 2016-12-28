@@ -53,6 +53,7 @@
 	var PatientInfo = __webpack_require__(127);
 	var NewPatientPanel = __webpack_require__(170);
 	var RecentlyEnteredPatientsPanel = __webpack_require__(171);
+	var SearchPatient = __webpack_require__(173);
 	var Panel = __webpack_require__(128);
 
 	var domUpdateWqueueButton = document.getElementById("update-wqueue-button");
@@ -259,7 +260,12 @@
 	});
 
 	domSearchPatientsLink.addEventListener("click", function(){
-		console.log("SEARCH-PATIENTS");
+		var search = SearchPatient.create();
+		var panel = Panel.create("患者検索", function(content){
+			var search = SearchPatient.create();
+			content.appendChild(search);
+		});
+		Panel.prepend(panel);
 	});
 
 	function broadcast(selector, event){
@@ -20635,6 +20641,33 @@
 /***/ function(module, exports) {
 
 	module.exports = "<div style=\"margin:6px 0\">\r\n\t<div class=\"patients-list\">\r\n\t{{#patients}}\r\n\t\t<div style=\"margin:4px;\">\r\n\t\t[{{patient_id_rep}}] {{last_name}} {{first_name}}\r\n\t\t({{last_name_yomi}} {{first_name_yomi}})\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link start-visit\" data-patient-id=\"{{patient_id}}\">診察受付</a>\r\n\t\t|\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link patient-info\" data-patient-id=\"{{patient_id}}\">患者情報</a>\r\n\t\t</div>\r\n\t{{/patients}}\r\n\t</div>\r\n\t<hr />\r\n\t<div>\r\n\t\t<button class=\"close\">閉じる</button>\r\n\t</div>\r\n</div>\r\n"
+
+/***/ },
+/* 173 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	var tmplSrc = __webpack_require__(174);
+	var rUtil = __webpack_require__(14);
+
+	exports.create = function(){
+		var html = tmplSrc;
+		var dom = rUtil.makeNode(html);
+		bindSearch(dom);
+		return dom;
+	};
+
+	function bindSearch(dom){
+		dom.querySelector("");
+	}
+
+
+/***/ },
+/* 174 */
+/***/ function(module, exports) {
+
+	module.exports = "<div>\r\n    <form class=\"search-form\" style=\"margin-top:6px;\">\r\n        <input name=\"search-text\" size=40> \r\n        <button type=\"submit\" class=\"cmd-link search-button\">検索</button>\r\n        <div style=\"font-size:smaller; color:#999; margin-top:3px;\">\r\n            例：\"田中\", \"太郎\", \"田中　太郎\", \"たなか\", \"たなか　たろう\"\r\n        </div>\r\n    </form>\r\n    <div class=\"result-box\" style=\"display:none\">\r\n    <table style=\"width:100%\">\r\n        <tbody>\r\n        <tr valign=\"top\">\r\n            <td style=\"width:40%\">\r\n                <select class=\"search-result\" style=\"width:100%;\" size=\"10\"></select>\r\n            </td>\r\n            <td class=\"detail\" style=\"width:60%\">\r\n            </td>\r\n        </tr>\r\n        </tbody>\r\n    </table>\r\n    </div>\r\n    <div>\r\n        <button class=\"close-panel\">閉じる</button>\r\n    </div>\r\n</div>\r\n"
 
 /***/ }
 /******/ ]);
