@@ -147,6 +147,25 @@
 		updateWqueue();
 	});
 
+	function doPatientInfo(patientId, done){
+		var seltor = ".workarea-panel.patient-info[data-patient-id='" + patientId + "']";
+		var current = Panel.container.querySelector(seltor);
+		if( current ){
+			current.parentNode.removeChild(current);
+			Panel.prepend(current);
+			done();
+		} else {
+			fetchPatientInfo(patientId, rUtil.todayAsSqlDate(), function(err, result){
+				if( err ){
+					done(err);
+					return;
+				}
+				Panel.prepend(PatientInfo.create(result.patient, result.hoken));
+				done();
+			});
+		}
+	}
+
 	domPatientInfoLink.addEventListener("click", function(){
 		var patientId = domPatientIdInput.value;
 		if( patientId === "" ){
@@ -158,21 +177,13 @@
 			return;
 		}
 		patientId = +patientId;
-		var seltor = ".workarea-panel.patient-info[data-patient-id='" + patientId + "']";
-		var current = Panel.container.querySelector(seltor);
-		if( current ){
-			current.parentNode.removeChild(current);
-			Panel.prepend(current);
-		} else {
-			fetchPatientInfo(patientId, rUtil.todayAsSqlDate(), function(err, result){
-				if( err ){
-					alert(err);
-					return;
-				}
-				domPatientIdInput.value = "";
-				Panel.prepend(PatientInfo.create(result.patient, result.hoken));
-			});
-		}
+		doPatientInfo(patientId, function(err){
+			if( err ){
+				alert(err);
+				return;
+			}
+			domPatientIdInput.value = "";
+		});
 	});
 
 	function fetchPatientInfo(patientId, at, cb){
@@ -231,7 +242,13 @@
 					});
 				},
 				onPatientInfo: function(patientId){
-					console.log("patient-info", patientId);
+					doPatientInfo(patientId, function(err){
+						if( err ){
+							alert(err);
+							return;
+						}
+						rUtil.removeNode(panel);
+					});
 				},
 				onClose: function(){
 					rUtil.removeNode(panel);
