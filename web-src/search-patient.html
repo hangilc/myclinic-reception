@@ -1,25 +1,13 @@
 <div>
-    <form class="search-form" style="margin-top:6px;">
+    <form class="search-form" onsubmit="return false" style="margin-top:6px;">
         <input name="search-text" size=40> 
         <button type="submit" class="cmd-link search-button">検索</button>
         <div style="font-size:smaller; color:#999; margin-top:3px;">
             例："田中", "太郎", "田中　太郎", "たなか", "たなか　たろう"
         </div>
     </form>
-    <div class="result-box" style="display:none">
-    <table style="width:100%">
-        <tbody>
-        <tr valign="top">
-            <td style="width:40%">
-                <select class="search-result" style="width:100%;" size="10"></select>
-            </td>
-            <td class="detail" style="width:60%">
-            </td>
-        </tr>
-        </tbody>
-    </table>
-    </div>
-    <div>
+	<div class="result-box" style="display:none"></div>
+    <div style="margin-top:4px">
         <button class="close-panel">閉じる</button>
     </div>
 </div>

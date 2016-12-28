@@ -214,9 +214,33 @@ domRecentlyEnteredPatientsLink.addEventListener("click", function(){
 });
 
 domSearchPatientsLink.addEventListener("click", function(){
-	var search = SearchPatient.create();
 	var panel = Panel.create("患者検索", function(content){
-		var search = SearchPatient.create();
+		var search = SearchPatient.create({
+			onStartVisit: function(patientId){
+				doStartVisit(patientId, function(err){
+					if( err === "cancel" ){
+						; // nop
+					} else if( err ){
+						alert(err);
+						return;
+					} else {
+						rUtil.removeNode(panel);
+					}
+				});
+			},
+			onPatientInfo: function(patientId){
+				doPatientInfo(patientId, function(err){
+					if( err ){
+						alert(err);
+						return;
+					}
+					rUtil.removeNode(panel);
+				});
+			},
+			onClose: function(){
+				rUtil.removeNode(panel);
+			}
+		});
 		content.appendChild(search);
 	});
 	Panel.prepend(panel);

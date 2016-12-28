@@ -1,0 +1,9 @@
+{{#patients}}
+	<div style="margin-bottom:2px">
+		[{{patient_id_rep}}] {{last_name}} {{first_name}}
+		<a href="javascript:void(0)" class="cmd-link start-visit" data-patient-id="{{patient_id}}">診察受付</a>
+		|
+		<a href="javascript:void(0)" class="cmd-link patient-info" data-patient-id="{{patient_id}}">患者情報</a>
+	</div>
+{{/patients}}
+

@@ -64,12 +64,6 @@ exports.makeNode = function(html){
 	return dom.firstChild;
 };
 
-exports.makeNodeList = function(html){
-	var dom = document.createElement("div");
-	dom.innerHTML = html;
-	return dom.childNodes;
-};
-
 exports.removeNode = function(node){
 	node.parentNode.removeChild(node);
 };

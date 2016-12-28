@@ -260,9 +260,33 @@
 	});
 
 	domSearchPatientsLink.addEventListener("click", function(){
-		var search = SearchPatient.create();
 		var panel = Panel.create("患者検索", function(content){
-			var search = SearchPatient.create();
+			var search = SearchPatient.create({
+				onStartVisit: function(patientId){
+					doStartVisit(patientId, function(err){
+						if( err === "cancel" ){
+							; // nop
+						} else if( err ){
+							alert(err);
+							return;
+						} else {
+							rUtil.removeNode(panel);
+						}
+					});
+				},
+				onPatientInfo: function(patientId){
+					doPatientInfo(patientId, function(err){
+						if( err ){
+							alert(err);
+							return;
+						}
+						rUtil.removeNode(panel);
+					});
+				},
+				onClose: function(){
+					rUtil.removeNode(panel);
+				}
+			});
 			content.appendChild(search);
 		});
 		Panel.prepend(panel);
@@ -2922,12 +2946,6 @@
 		var dom = document.createElement("div");
 		dom.innerHTML = html;
 		return dom.firstChild;
-	};
-
-	exports.makeNodeList = function(html){
-		var dom = document.createElement("div");
-		dom.innerHTML = html;
-		return dom.childNodes;
 	};
 
 	exports.removeNode = function(node){
@@ -20650,16 +20668,43 @@
 
 	var tmplSrc = __webpack_require__(174);
 	var rUtil = __webpack_require__(14);
+	var service = __webpack_require__(7);
+	var PatientSearchResult = __webpack_require__(175);
 
-	exports.create = function(){
+	exports.create = function(callbacks){
 		var html = tmplSrc;
 		var dom = rUtil.makeNode(html);
-		bindSearch(dom);
+		bindSearch(dom, callbacks);
+		bindClose(dom, callbacks.onClose);
 		return dom;
 	};
 
-	function bindSearch(dom){
-		dom.querySelector("");
+	function bindClose(dom, callback){
+		dom.querySelector(".close-panel").addEventListener("click", function(){
+			callback();
+		});
+	}
+
+	function bindSearch(dom, callbacks){
+		dom.querySelector(".search-form").addEventListener("submit", function(event){
+			var form = event.target;
+			var text = form.querySelector("input[name='search-text']").value;
+			text = text.trim();
+			if( text === "" ){
+				return;
+			}
+			service.searchPatient(text, function(err, result){
+				if( err ){
+					alert(err);
+					return;
+				}
+				var searchResult = PatientSearchResult.create(result, callbacks);
+				var wrapper = dom.querySelector(".result-box");
+				wrapper.innerHTML = "";
+				wrapper.appendChild(searchResult);
+				wrapper.style.display = "";
+			});
+		});
 	}
 
 
@@ -20667,7 +20712,58 @@
 /* 174 */
 /***/ function(module, exports) {
 
-	module.exports = "<div>\r\n    <form class=\"search-form\" style=\"margin-top:6px;\">\r\n        <input name=\"search-text\" size=40> \r\n        <button type=\"submit\" class=\"cmd-link search-button\">検索</button>\r\n        <div style=\"font-size:smaller; color:#999; margin-top:3px;\">\r\n            例：\"田中\", \"太郎\", \"田中　太郎\", \"たなか\", \"たなか　たろう\"\r\n        </div>\r\n    </form>\r\n    <div class=\"result-box\" style=\"display:none\">\r\n    <table style=\"width:100%\">\r\n        <tbody>\r\n        <tr valign=\"top\">\r\n            <td style=\"width:40%\">\r\n                <select class=\"search-result\" style=\"width:100%;\" size=\"10\"></select>\r\n            </td>\r\n            <td class=\"detail\" style=\"width:60%\">\r\n            </td>\r\n        </tr>\r\n        </tbody>\r\n    </table>\r\n    </div>\r\n    <div>\r\n        <button class=\"close-panel\">閉じる</button>\r\n    </div>\r\n</div>\r\n"
+	module.exports = "<div>\r\n    <form class=\"search-form\" onsubmit=\"return false\" style=\"margin-top:6px;\">\r\n        <input name=\"search-text\" size=40> \r\n        <button type=\"submit\" class=\"cmd-link search-button\">検索</button>\r\n        <div style=\"font-size:smaller; color:#999; margin-top:3px;\">\r\n            例：\"田中\", \"太郎\", \"田中　太郎\", \"たなか\", \"たなか　たろう\"\r\n        </div>\r\n    </form>\r\n\t<div class=\"result-box\" style=\"display:none\"></div>\r\n    <div style=\"margin-top:4px\">\r\n        <button class=\"close-panel\">閉じる</button>\r\n    </div>\r\n</div>\r\n"
+
+/***/ },
+/* 175 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	var hogan = __webpack_require__(2);
+	var tmplSrc = __webpack_require__(176);
+	var tmpl = hogan.compile(tmplSrc);
+	var rUtil = __webpack_require__(14);
+
+	exports.create = function(patients, callbacks){
+		var list = patients.map(function(patient){
+			var data = {
+				patient_id_rep: rUtil.padNumber(patient.patient_id, 4, "0")
+			};
+			Object.keys(patient).forEach(function(key){
+				data[key] = patient[key];
+			});
+			return data;
+		});
+		var html = tmpl.render({ patients: list });
+		var dom = document.createElement("div");
+		dom.innerHTML = html;
+		dom.style.fontSize = "100%";
+		dom.style.padding = "4px 0";
+		dom.style.maxHeight = "200px";
+		dom.style.overflowY = "auto";
+		dom.addEventListener("click", function(event){
+			var target = event.target;
+			if( target.tagName === "A" ){
+				if( target.classList.contains("start-visit") ){
+					var patientId = +target.getAttribute("data-patient-id");
+					callbacks.onStartVisit(patientId);
+				} else if( target.classList.contains("patient-info") ){
+					var patientId = +target.getAttribute("data-patient-id");
+					callbacks.onPatientInfo(patientId);
+				}
+			}
+		});
+		return dom;
+	};
+
+
+
+/***/ },
+/* 176 */
+/***/ function(module, exports) {
+
+	module.exports = "{{#patients}}\r\n\t<div style=\"margin-bottom:2px\">\r\n\t\t[{{patient_id_rep}}] {{last_name}} {{first_name}}\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link start-visit\" data-patient-id=\"{{patient_id}}\">診察受付</a>\r\n\t\t|\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link patient-info\" data-patient-id=\"{{patient_id}}\">患者情報</a>\r\n\t</div>\r\n{{/patients}}\r\n\r\n"
 
 /***/ }
 /******/ ]);
