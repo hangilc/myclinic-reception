@@ -45,6 +45,36 @@ function updateWqueue(){
 	});
 }
 
+function doStartVisit(patientId, done){
+	service.getPatient(+patientId, function(err, patient){
+		if( err ){
+			done(err);
+			return;
+		}
+		modal.startModal({
+			title: "患者受付",
+			init: function(content, close){
+				StartVisit.render(content, patient, {
+					onClose: function(){
+						close();
+						done("cancel");
+					},
+					onError: function(err){
+						close();
+						done(err);
+					},
+					onEnter: function(){
+						var e = new Event("new-visit", { bubbles: true });
+						document.body.dispatchEvent(e);
+						close();
+						done();
+					}
+				});
+			}
+		});
+	});
+}
+
 domStartVisitButton.addEventListener("click", function(){
 	var patientId = domPatientIdInput.value;
 	if( patientId === "" ){
@@ -56,29 +86,14 @@ domStartVisitButton.addEventListener("click", function(){
 		return;
 	}
 	patientId = +patientId;
-	service.getPatient(+patientId, function(err, patient){
-		if( err ){
+	doStartVisit(patientId, function(err){
+		if( err === "cancel" ){
+			; // nop
+		} else if( err ){
 			alert(err);
-			return;
+		} else {
+			domPatientIdInput.value = "";
 		}
-		modal.startModal({
-			title: "患者受付",
-			init: function(content, close){
-				StartVisit.render(content, patient, {
-					onClose: close,
-					onError: function(err){
-						alert(err);
-						close();
-					},
-					onEnter: function(){
-						var e = new Event("new-visit", { bubbles: true });
-						domStartVisitButton.dispatchEvent(e);
-						domPatientIdInput.value = "";
-						close();
-					}
-				});
-			}
-		});
 	});
 });
 
@@ -158,6 +173,20 @@ domRecentlyEnteredPatientsLink.addEventListener("click", function(){
 			return;
 		}
 		var panel = RecentlyEnteredPatientsPanel.create(result, {
+			onStartVisit: function(patientId){
+				doStartVisit(patientId, function(err){
+					if( err === "cancel" ){
+						; // nop
+					} else if( err ){
+						alert(err);
+					} else {
+						rUtil.removeNode(panel);
+					}
+				});
+			},
+			onPatientInfo: function(patientId){
+				console.log("patient-info", patientId);
+			},
 			onClose: function(){
 				rUtil.removeNode(panel);
 			}

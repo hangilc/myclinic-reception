@@ -21,30 +21,30 @@ exports.create = function(patients, callbacks){
 		dom.querySelector(".close").addEventListener("click", function(){
 			callbacks.onClose();
 		});
-		bindStartVisit(dom);
-		bindPatientInfo(dom);
+		bindStartVisit(dom, callbacks.onStartVisit);
+		bindPatientInfo(dom, callbacks.onPatientInfo);
 		content.appendChild(dom);
 	});
 	panel.classList.add("recently-entered-patients");
 	return panel;
 };
 
-function bindStartVisit(dom){
+function bindStartVisit(dom, callback){
 	dom.addEventListener("click", function(event){
 		var target = event.target;
 		if( target.tagName === "A" && target.classList.contains("start-visit") ){
 			var patientId = target.getAttribute("data-patient-id");
-			console.log("start-visit", patientId);
+			callback(patientId);
 		}
 	});
 };
 
-function bindPatientInfo(dom){
+function bindPatientInfo(dom, callback){
 	dom.addEventListener("click", function(event){
 		var target = event.target;
 		if( target.tagName === "A" && target.classList.contains("patient-info") ){
 			var patientId = target.getAttribute("data-patient-id");
-			console.log("patient-info", patientId);
+			callback(patientId);
 		}
 	});
 };
