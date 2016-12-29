@@ -26,7 +26,7 @@ exports.create = function(patient, hoken){
 		dom.innerHTML = tmplSrc;
 		BasicInfo.setup(dom.querySelector(".basic-info-wrapper"), patient);
 		setupHoken(dom, hoken, patient);
-		var commandBox = CommandBox.create(patient.patient_id, {
+		var commandBox = CommandBox.create(patient, {
 			onNewShahokokuho: function(){
 				newShahokokuho(patient, panel);
 			},
@@ -45,12 +45,23 @@ exports.create = function(patient, hoken){
 					setupHoken(dom, result, patient);
 				});
 			},
-			onStartVisit: function(){
-				service.startVisit(patient.patient_id, rUtil.nowAsSqlDateTime(), function(err){
-					var e = new Event("new-visit", { bubbles: true });
-					panel.dispatchEvent(e);
-					rUtil.removeNode(panel);
-				});
+			onVisitStarted: function(){
+				rUtil.removeNode(panel);
+				// doStartVisit(patient.patient_id, function(err){
+				// 	if( err === "cancel" ){
+				// 		; // nop
+				// 	} else if( err ){
+				// 		alert(err);
+				// 		return;
+				// 	} else {
+				// 		rUtil.removeNode(panel);
+				// 	}
+				// })
+				// service.startVisit(patient.patient_id, rUtil.nowAsSqlDateTime(), function(err){
+				// 	var e = new Event("new-visit", { bubbles: true });
+				// 	panel.dispatchEvent(e);
+				// 	rUtil.removeNode(panel);
+				// });
 			},
 			onClose: function(){
 				panel.parentNode.removeChild(panel);	

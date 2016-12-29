@@ -55,6 +55,7 @@
 	var RecentlyEnteredPatientsPanel = __webpack_require__(171);
 	var SearchPatient = __webpack_require__(173);
 	var Panel = __webpack_require__(128);
+	var doStartVisit = __webpack_require__(177);
 
 	var domUpdateWqueueButton = document.getElementById("update-wqueue-button");
 	var domWqueueTable = document.getElementById("wqueue-table");
@@ -92,35 +93,35 @@
 		});
 	}
 
-	function doStartVisit(patientId, done){
-		service.getPatient(+patientId, function(err, patient){
-			if( err ){
-				done(err);
-				return;
-			}
-			modal.startModal({
-				title: "患者受付",
-				init: function(content, close){
-					StartVisit.render(content, patient, {
-						onClose: function(){
-							close();
-							done("cancel");
-						},
-						onError: function(err){
-							close();
-							done(err);
-						},
-						onEnter: function(){
-							var e = new Event("new-visit", { bubbles: true });
-							document.body.dispatchEvent(e);
-							close();
-							done();
-						}
-					});
-				}
-			});
-		});
-	}
+	// function doStartVisit(patientId, done){
+	// 	service.getPatient(+patientId, function(err, patient){
+	// 		if( err ){
+	// 			done(err);
+	// 			return;
+	// 		}
+	// 		modal.startModal({
+	// 			title: "患者受付",
+	// 			init: function(content, close){
+	// 				StartVisit.render(content, patient, {
+	// 					onClose: function(){
+	// 						close();
+	// 						done("cancel");
+	// 					},
+	// 					onError: function(err){
+	// 						close();
+	// 						done(err);
+	// 					},
+	// 					onEnter: function(){
+	// 						var e = new Event("new-visit", { bubbles: true });
+	// 						document.body.dispatchEvent(e);
+	// 						close();
+	// 						done();
+	// 					}
+	// 				});
+	// 			}
+	// 		});
+	// 	});
+	// }
 
 	domStartVisitButton.addEventListener("click", function(){
 		var patientId = domPatientIdInput.value;
@@ -2752,6 +2753,7 @@
 		this.title = getOpt(opts, "title", "Untitled");
 		this.onCloseClick = getOpt(opts, "onCloseClick", null);
 		this.position = opts.position;
+		this.maxHeight = opts.maxHeight;
 	}
 
 	ModalDialog.prototype.open = function(){
@@ -2761,7 +2763,12 @@
 		var dialog = createDialog(this.dialogZIndex);
 		if( this.position ){
 			dialog.style.position = this.position;
+			if( this.position === "fixed" ){
+				dialog.style.maxHeight = (window.innerHeight - 90) + "px";
+				dialog.style.overflowY = "auto";
+			}
 		}
+
 		document.body.appendChild(dialog);
 		var header = new Header(this.title);
 		dialog.appendChild(header.dom);
@@ -18278,7 +18285,7 @@
 			dom.innerHTML = tmplSrc;
 			BasicInfo.setup(dom.querySelector(".basic-info-wrapper"), patient);
 			setupHoken(dom, hoken, patient);
-			var commandBox = CommandBox.create(patient.patient_id, {
+			var commandBox = CommandBox.create(patient, {
 				onNewShahokokuho: function(){
 					newShahokokuho(patient, panel);
 				},
@@ -18297,12 +18304,23 @@
 						setupHoken(dom, result, patient);
 					});
 				},
-				onStartVisit: function(){
-					service.startVisit(patient.patient_id, rUtil.nowAsSqlDateTime(), function(err){
-						var e = new Event("new-visit", { bubbles: true });
-						panel.dispatchEvent(e);
-						rUtil.removeNode(panel);
-					});
+				onVisitStarted: function(){
+					rUtil.removeNode(panel);
+					// doStartVisit(patient.patient_id, function(err){
+					// 	if( err === "cancel" ){
+					// 		; // nop
+					// 	} else if( err ){
+					// 		alert(err);
+					// 		return;
+					// 	} else {
+					// 		rUtil.removeNode(panel);
+					// 	}
+					// })
+					// service.startVisit(patient.patient_id, rUtil.nowAsSqlDateTime(), function(err){
+					// 	var e = new Event("new-visit", { bubbles: true });
+					// 	panel.dispatchEvent(e);
+					// 	rUtil.removeNode(panel);
+					// });
 				},
 				onClose: function(){
 					panel.parentNode.removeChild(panel);	
@@ -20497,6 +20515,7 @@
 	var hogan = __webpack_require__(2);
 	var tmplSrc = __webpack_require__(168);
 	var tmpl = hogan.compile(tmplSrc);
+	var doStartVisit = __webpack_require__(177);
 
 	exports.create = function(patient, callbacks){
 		var dom = document.createElement("div");
@@ -20524,9 +20543,16 @@
 		});
 		dom.querySelector(".start-visit").addEventListener("click", function(event){
 			event.target.disabled = true;
-			if( callbacks.onStartVisit ){
-				callbacks.onStartVisit();
-			}
+			doStartVisit(patient.patient_id, function(err){
+				if( err === "cancel" ){
+					event.target.disabled = false;
+				} else if( err ) {
+					alert(err);
+					event.target.disabled = false;
+				} else {
+					callbacks.onVisitStarted();
+				}
+			});
 		});
 		dom.querySelector(".close-panel").addEventListener("click", function(){
 			if( callbacks.onClose ){
@@ -20764,6 +20790,49 @@
 /***/ function(module, exports) {
 
 	module.exports = "{{#patients}}\r\n\t<div style=\"margin-bottom:2px\">\r\n\t\t[{{patient_id_rep}}] {{last_name}} {{first_name}}\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link start-visit\" data-patient-id=\"{{patient_id}}\">診察受付</a>\r\n\t\t|\r\n\t\t<a href=\"javascript:void(0)\" class=\"cmd-link patient-info\" data-patient-id=\"{{patient_id}}\">患者情報</a>\r\n\t</div>\r\n{{/patients}}\r\n\r\n"
+
+/***/ },
+/* 177 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	var service = __webpack_require__(7);
+	var modal = __webpack_require__(11);
+	var StartVisit = __webpack_require__(12);
+
+	function doStartVisit(patientId, done){
+		service.getPatient(+patientId, function(err, patient){
+			if( err ){
+				done(err);
+				return;
+			}
+			modal.startModal({
+				title: "患者受付",
+				init: function(content, close){
+					StartVisit.render(content, patient, {
+						onClose: function(){
+							close();
+							done("cancel");
+						},
+						onError: function(err){
+							close();
+							done(err);
+						},
+						onEnter: function(){
+							var e = new Event("new-visit", { bubbles: true });
+							document.body.dispatchEvent(e);
+							close();
+							done();
+						}
+					});
+				},
+				position: "fixed"
+			});
+		});
+	}
+
+	module.exports = doStartVisit;
 
 /***/ }
 /******/ ]);

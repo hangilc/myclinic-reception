@@ -1,0 +1,10 @@
+{
+	"folders":
+	[
+		{
+			"path": ".",
+			"folder_exclude_patterns": [".git", "node_modules", "printer-settings"],
+			"file_exclude_patterns": ["bundle.js"]
+		}
+	]
+}

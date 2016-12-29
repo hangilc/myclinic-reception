@@ -1,6 +1,7 @@
 var hogan = require("hogan.js");
 var tmplSrc = require("raw!./patient-info-command-box.html");
 var tmpl = hogan.compile(tmplSrc);
+var doStartVisit = require("./do-start-visit.js");
 
 exports.create = function(patient, callbacks){
 	var dom = document.createElement("div");
@@ -28,9 +29,16 @@ exports.create = function(patient, callbacks){
 	});
 	dom.querySelector(".start-visit").addEventListener("click", function(event){
 		event.target.disabled = true;
-		if( callbacks.onStartVisit ){
-			callbacks.onStartVisit();
-		}
+		doStartVisit(patient.patient_id, function(err){
+			if( err === "cancel" ){
+				event.target.disabled = false;
+			} else if( err ) {
+				alert(err);
+				event.target.disabled = false;
+			} else {
+				callbacks.onVisitStarted();
+			}
+		});
 	});
 	dom.querySelector(".close-panel").addEventListener("click", function(){
 		if( callbacks.onClose ){

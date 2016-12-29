@@ -174,6 +174,7 @@ function ModalDialog(opts){
 	this.title = getOpt(opts, "title", "Untitled");
 	this.onCloseClick = getOpt(opts, "onCloseClick", null);
 	this.position = opts.position;
+	this.maxHeight = opts.maxHeight;
 }
 
 ModalDialog.prototype.open = function(){
@@ -183,7 +184,12 @@ ModalDialog.prototype.open = function(){
 	var dialog = createDialog(this.dialogZIndex);
 	if( this.position ){
 		dialog.style.position = this.position;
+		if( this.position === "fixed" ){
+			dialog.style.maxHeight = (window.innerHeight - 90) + "px";
+			dialog.style.overflowY = "auto";
+		}
 	}
+
 	document.body.appendChild(dialog);
 	var header = new Header(this.title);
 	dialog.appendChild(header.dom);

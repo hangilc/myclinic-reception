@@ -9,6 +9,7 @@ var NewPatientPanel = require("./new-patient-panel.js");
 var RecentlyEnteredPatientsPanel = require("./recently-registered-patients.js");
 var SearchPatient = require("./search-patient.js");
 var Panel = require("./panel");
+var doStartVisit = require("./do-start-visit.js");
 
 var domUpdateWqueueButton = document.getElementById("update-wqueue-button");
 var domWqueueTable = document.getElementById("wqueue-table");
@@ -46,35 +47,35 @@ function updateWqueue(){
 	});
 }
 
-function doStartVisit(patientId, done){
-	service.getPatient(+patientId, function(err, patient){
-		if( err ){
-			done(err);
-			return;
-		}
-		modal.startModal({
-			title: "患者受付",
-			init: function(content, close){
-				StartVisit.render(content, patient, {
-					onClose: function(){
-						close();
-						done("cancel");
-					},
-					onError: function(err){
-						close();
-						done(err);
-					},
-					onEnter: function(){
-						var e = new Event("new-visit", { bubbles: true });
-						document.body.dispatchEvent(e);
-						close();
-						done();
-					}
-				});
-			}
-		});
-	});
-}
+// function doStartVisit(patientId, done){
+// 	service.getPatient(+patientId, function(err, patient){
+// 		if( err ){
+// 			done(err);
+// 			return;
+// 		}
+// 		modal.startModal({
+// 			title: "患者受付",
+// 			init: function(content, close){
+// 				StartVisit.render(content, patient, {
+// 					onClose: function(){
+// 						close();
+// 						done("cancel");
+// 					},
+// 					onError: function(err){
+// 						close();
+// 						done(err);
+// 					},
+// 					onEnter: function(){
+// 						var e = new Event("new-visit", { bubbles: true });
+// 						document.body.dispatchEvent(e);
+// 						close();
+// 						done();
+// 					}
+// 				});
+// 			}
+// 		});
+// 	});
+// }
 
 domStartVisitButton.addEventListener("click", function(){
 	var patientId = domPatientIdInput.value;

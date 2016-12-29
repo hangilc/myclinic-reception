@@ -1,0 +1,691 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"default",
+				"defaultSubsWithoutPrinter"
+			],
+			[
+				"pateint",
+				"patientInfoTmplSrc"
+			],
+			[
+				"editWorak",
+				"editWorkAreaId"
+			],
+			[
+				"modify",
+				"modifyWorkAreaId"
+			],
+			[
+				"choose",
+				"chooseSettingId"
+			],
+			[
+				"Shinryou",
+				"ShinryoukouiMasterArch"
+			],
+			[
+				"devmode",
+				"devmode_setting_path"
+			],
+			[
+				"label",
+				"labelSelectSelector"
+			],
+			[
+				"search",
+				"searchTextInputSelector"
+			],
+			[
+				"getDisplaydays",
+				"getDisplayDaysInputDom"
+			],
+			[
+				"getDisplay",
+				"getDisplayDaysRowDom"
+			],
+			[
+				"curren",
+				"currentPatientId"
+			],
+			[
+				"pro",
+				"prototype"
+			],
+			[
+				"DiseaseEndR",
+				"DiseaseEndReasonNotEnded"
+			],
+			[
+				"listCurrent",
+				"listCurrentDiseasesWithMaster"
+			],
+			[
+				"dlete",
+				"deletePrescExample"
+			],
+			[
+				"mockPrescE",
+				"mockPrescExampleIndex"
+			],
+			[
+				"ass",
+				"assignProps"
+			],
+			[
+				"sha",
+				"shahokokuho_id"
+			],
+			[
+				"list",
+				"listWqueueForExam"
+			],
+			[
+				"wque",
+				"wqueueStateWaitCashier"
+			],
+			[
+				"wqueu",
+				"wqueueStateWaitDrug"
+			],
+			[
+				"wqueue",
+				"wqueueStateWaitCashier"
+			],
+			[
+				"wqueueWa",
+				"wqueueStateWaitExam"
+			],
+			[
+				"平成",
+				"平成28年6月14日（火）"
+			],
+			[
+				"Kanji",
+				"KanjiDateFromString"
+			],
+			[
+				"alphaDigi",
+				"alphaDigitToZenkaku"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "web-src/patient-info.js",
+			"settings":
+			{
+				"buffer_size": 6954,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		}
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 81.0,
+		"last_filter": "rename",
+		"selected_items":
+		[
+			[
+				"rename",
+				"TypeScript: Rename"
+			],
+			[
+				"installpa",
+				"Package Control: Install Package"
+			],
+			[
+				"preserve",
+				"MultiEditUtils: Preserve Case"
+			],
+			[
+				"instal",
+				"Package Control: Install Package"
+			],
+			[
+				"preserv",
+				"MultiEditUtils: Preserve Case"
+			],
+			[
+				"snippetmyclinic",
+				"Snippet: myclinic-db-source"
+			],
+			[
+				"remo",
+				"Package Control: Remove Package"
+			],
+			[
+				"markdown",
+				"Markdown Preview: Preview in Browser"
+			],
+			[
+				"install",
+				"Package Control: Install Package"
+			],
+			[
+				"packageinstall",
+				"Package Control: Install Package"
+			]
+		],
+		"width": 504.0
+	},
+	"console":
+	{
+		"height": 146.0,
+		"history":
+		[
+			"import urllib.request,os,hashlib; h = '2915d1851351e5ee549c20394736b442' + '8bc59f460fa1548d1514676163dafc88'; pf = 'Package Control.sublime-package'; ipp = sublime.installed_packages_path(); urllib.request.install_opener( urllib.request.build_opener( urllib.request.ProxyHandler()) ); by = urllib.request.urlopen( 'http://packagecontrol.io/' + pf.replace(' ', '%20')).read(); dh = hashlib.sha256(by).hexdigest(); print('Error validating download (got %s instead of %s), please try manual install' % (dh, h)) if dh != h else open(os.path.join( ipp, pf), 'wb' ).write(by)"
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"file_history":
+	[
+		"/C/Users/hangil/myclinic-web-practice/node_modules/myclinic-web/server.js",
+		"/C/Users/hangil/myclinic-web-pharma/server.js",
+		"/C/Users/hangil/myclinic-web-practice/server.js",
+		"/C/Users/hangil/work/learn-typescript/world.ts",
+		"/C/Users/hangil/myclinic-pharma/web-src/drugbag-main.js",
+		"/C/Users/hangil/myclinic-pharma/web-src/main.js",
+		"/C/Users/hangil/myclinic-pharma/web-src/pharma-service.js",
+		"/C/Users/hangil/myclinic-pharma/web-src/presc-main.js",
+		"/C/Users/hangil/myclinic-pharma/web-src/packaging-patient.js",
+		"/C/Users/hangil/myclinic-pharma/test-server.js",
+		"/C/Users/hangil/myclinic-pharma/index.js",
+		"/C/Users/hangil/myclinic-drawer-print-server/package.json",
+		"/C/Users/hangil/myclinic-service-api/index.js",
+		"/C/Users/hangil/myclinic-service-api/package.json",
+		"/C/Users/hangil/myclinic-service/lib/service.js",
+		"/C/Users/hangil/myclinic-pharma/test-config/service-config.js",
+		"/C/Users/hangil/myclinic-pharma/test-config/pharma-config.js",
+		"/C/Users/hangil/myclinic-pharma/package.json",
+		"/C/Users/hangil/myclinic-service/test/test-find-pharma-drug.js",
+		"/C/Users/hangil/myclinic-service/test/test-count-visits-by-iyakuhincode.js",
+		"/C/Users/hangil/myclinic-service/test/test-list-todays-visits-for-pharma.js",
+		"/C/Users/hangil/myclinic-service/test/test-list-drugs.js",
+		"/C/Users/hangil/myclinic-service/test/test-list-visits.js",
+		"/C/Users/hangil/myclinic-service/package.json",
+		"/C/Users/hangil/myclinic-db/package.json",
+		"/C/Users/hangil/myclinic-service/test/test-list-full-pharma-queue.js",
+		"/C/Users/hangil/myclinic-db/lib/pharma-queue.js",
+		"/C/Users/hangil/myclinic-db/lib/start-visit.js",
+		"/C/Users/hangil/myclinic-db/lib/drug.js",
+		"/C/Users/hangil/myclinic-db/lib/iyakuhin-master.js",
+		"/C/Users/hangil/myclinic-service/index.js",
+		"/C/Users/hangil/myclinic-db/test/model.js",
+		"/C/Users/hangil/myclinic-db/test/util.js",
+		"/C/Users/hangil/myclinic-db/test/test.js",
+		"/C/Users/hangil/myclinic-db/lib/patient.js",
+		"/C/Users/hangil/myclinic-service/test/api.js",
+		"/C/Users/hangil/myclinic-db/test/setup.js",
+		"/C/Users/hangil/myclinic-service/test-config/service-config.js",
+		"/C/Users/hangil/myclinic-service/test-server.js",
+		"/C/Users/hangil/myclinic-service/sample-config/service-config.js",
+		"/C/Users/hangil/myclinic-db/test/test-full-drug.js",
+		"/C/Users/hangil/myclinic-db/lib/visit.js",
+		"/C/Users/hangil/myclinic-db/lib/list-iyakuhin-by-patient.js",
+		"/C/Users/hangil/myclinic-db/lib/presc-done.js",
+		"/C/Users/hangil/myclinic-db/lib/list-full-visits-by-iyakuhincode.js",
+		"/C/Users/hangil/myclinic-pharma/static/index.html",
+		"/C/Users/hangil/myclinic-pharma/web-src/printer-setting.html",
+		"/C/Users/hangil/myclinic-pharma/web-src/print-util.js",
+		"/C/Users/hangil/myclinic-shohousen/web-src/main.js",
+		"/C/Users/hangil/myclinic-pharma/static/drugbag-preview.html",
+		"/C/Users/hangil/myclinic-drawer-forms/drugbag.js",
+		"/C/Users/hangil/myclinic-pharma/web-src/drugbag-data.js",
+		"/C/Users/hangil/work/myclinic-node3/pharma.jsx",
+		"/C/Users/hangil/myclinic-pharma/static/presc-preview.html",
+		"/C/Users/hangil/myclinic-pharma/.gitignore",
+		"/C/Users/hangil/myclinic-pharma/web-src/util.js",
+		"/C/Users/hangil/myclinic-pharma/web-src/aux-info.js",
+		"/C/Users/hangil/work/myclinic-node3/presc-preview.html",
+		"/C/Users/hangil/work/myclinic-node3/drugbag-preview.js",
+		"/C/Users/hangil/work/myclinic-node3/drugbag-preview.html",
+		"/C/Users/hangil/work/myclinic-node3/presc-content-preview.html",
+		"/C/Users/hangil/work/myclinic-node3/drawer-forms/presc-content.js",
+		"/C/Users/hangil/work/myclinic-node3/server.js",
+		"/C/Users/hangil/myclinic-pharma/sample-config/pharma-config.js",
+		"/C/Users/hangil/myclinic-shohousen/sample-config/shohousen-config.js",
+		"/C/Users/hangil/myclinic-practice/sample-config/practice-config.js",
+		"/C/Users/hangil/myclinic-drawer-forms/test-drugbag.html",
+		"/C/Users/hangil/myclinic-practice/myclinic-util.js",
+		"/C/Users/hangil/myclinic-drawer-forms/test-drugbag.js",
+		"/C/Users/hangil/work/myclinic-node3/myclinic-util.js",
+		"/C/Users/hangil/work/myclinic-node3/drawer/drawer-compiler.js",
+		"/C/Users/hangil/work/myclinic-node3/drugbag-data.js",
+		"/C/Users/hangil/work/myclinic-node3/drawer-forms/test-drugbag.js",
+		"/C/Users/hangil/myclinic-drawer-forms/refer.js",
+		"/C/Users/hangil/myclinic-drawer-forms/test-refer.js",
+		"/C/Users/hangil/work/myclinic-node3/drawer-forms/drugbag.js",
+		"/C/Users/hangil/myclinic-drawer-forms/test-refer.html",
+		"/C/Users/hangil/myclinic-practice/web-src/task.js",
+		"/C/Users/hangil/myclinic-db/lib/charge.js",
+		"/C/Users/hangil/myclinic-db/lib/full-visit.js",
+		"/C/Users/hangil/myclinic-db/test/moment-ex.js",
+		"/C/Users/hangil/myclinic-server/config/practice-config.js",
+		"/C/Users/hangil/myclinic-server/config/service-config.js",
+		"/C/Users/hangil/myclinic-server/sample-config/service-config.js",
+		"/C/Users/hangil/myclinic-server/sample-config/practice-config.js",
+		"/C/Users/hangil/myclinic-service-api/bundle.js",
+		"/C/Users/hangil/myclinic-shohousen/package.json",
+		"/C/Users/hangil/myclinic-service-api/test-env.js",
+		"/C/Users/hangil/myclinic-service-api/test-env.jg",
+		"/C/Users/hangil/myclinic-service/README.md",
+		"/C/Users/hangil/myclinic-practice/index.js",
+		"/C/Users/hangil/myclinic-shohousen/index.js",
+		"/C/Users/hangil/work/myclinic-node3/pharma.html",
+		"/C/Users/hangil/myclinic-pharma/README.md",
+		"/C/Users/hangil/myclinic-practice/web-src/main.js",
+		"/C/Users/hangil/myclinic-server/package.json",
+		"/C/Users/hangil/myclinic-practice/sample-config/practice-rcpt-houkatsu.json",
+		"/C/Users/hangil/myclinic-practice/rcpt.js",
+		"/C/Users/hangil/myclinic-practice/rcpt-houkatsu.json",
+		"/C/Users/hangil/myclinic-server/README.md",
+		"/C/Users/hangil/myclinic-practice/master-map.js",
+		"/C/Users/hangil/myclinic-practice/package.json",
+		"/C/Users/hangil/myclinic-practice/test-config.js",
+		"/C/Users/hangil/myclinic-practice/.gitignore",
+		"/C/Users/hangil/myclinic-refer/web-src/printer-panel-list-settings.html",
+		"/C/Users/hangil/myclinic-shohousen/web-src/index.html",
+		"/C/Users/hangil/work/myclinic-node3/refer-data.json",
+		"/C/Users/hangil/myclinic-refer/web-src/printer-setting.js",
+		"/C/Users/hangil/myclinic-refer/test-server.js",
+		"/C/Users/hangil/myclinic-refer/package.json",
+		"/C/Users/hangil/work/myclinic-node3/drawer-forms/refer.js",
+		"/C/Users/hangil/myclinic-drawer-forms/package.json",
+		"/C/Users/hangil/myclinic-drawer-forms/shohousen.js",
+		"/C/Users/hangil/myclinic-drawer-forms/test-shohousen.js",
+		"/C/Users/hangil/myclinic-drawer-svg/drawer-svg.js",
+		"/C/Users/hangil/myclinic-drawer/drawer-compiler.js",
+		"/C/Users/hangil/work/myclinic-node3/refer.html",
+		"/C/Users/hangil/work/myclinic-node3/refer.js",
+		"/C/Users/hangil/myclinic-drawer-forms/index.js",
+		"/C/Users/hangil/myclinic-drawer/index.js",
+		"/C/Users/hangil/myclinic-drawer-forms/test.js",
+		"/C/Users/hangil/work/myclinic-node3/drawer-forms/shohousen.js",
+		"/C/Users/hangil/work/myclinic-requirejs/webapps/practice/_js/shohousen/Shohousen.js",
+		"/C/Users/hangil/myclinic-shohousen/service.js",
+		"/C/Users/hangil/myclinic-shohousen/test-config.js",
+		"/C/Users/hangil/work/learn-go/hello.go",
+		"/C/Users/hangil/work/myclinic-node3/shohousen.js",
+		"/C/Users/hangil/conti/arr.json"
+	],
+	"find":
+	{
+		"height": 34.0
+	},
+	"find_in_files":
+	{
+		"height": 90.0,
+		"where_history":
+		[
+			"C:\\Users\\hangil\\myclinic-pharma\\web-src",
+			"C:\\Users\\hangil\\myclinic-shohousen,C:\\Users\\hangil\\myclinic-shohousen\\web-src",
+			"C:\\Users\\hangil\\myclinic-practice\\lib,C:\\Users\\hangil\\myclinic-practice\\web-src",
+			"C:\\Users\\hangil\\myclinic-db\\lib",
+			"C:\\Users\\hangil\\myclinic-practice\\lib,C:\\Users\\hangil\\myclinic-practice\\web-src",
+			"C:\\Users\\hangil\\myclinic-db\\lib",
+			"C:\\Users\\hangil\\myclinic-practice\\lib,C:\\Users\\hangil\\myclinic-practice\\web-src",
+			"C:\\Users\\hangil\\myclinic-db\\lib,C:\\Users\\hangil\\myclinic-db\\test",
+			"C:\\Users\\hangil\\myclinic-practice\\web-src",
+			"C:\\Users\\hangil\\myclinic-practice\\lib,C:\\Users\\hangil\\myclinic-practice\\web-src",
+			".",
+			"C:\\Users\\hangil\\myclinic-practice\\lib,C:\\Users\\hangil\\myclinic-practice\\web-src",
+			"C:\\Users\\hangil\\myclinic-practice\\lib,C:\\Users\\hangil\\myclinic-practice\\web-src,C:\\Users\\hangil\\myclinic-practice\\static",
+			"C:\\Users\\hangil\\myclinic-practice\\lib,C:\\Users\\hangil\\myclinic-practice\\web-src",
+			"C:\\Users\\hangil\\myclinic-db\\lib",
+			"C:\\Users\\hangil\\myclinic-practice\\lib,C:\\Users\\hangil\\myclinic-practice\\web-src",
+			"C:\\Users\\hangil\\myclinic-db\\test,C:\\Users\\hangil\\myclinic-db\\lib",
+			"C:\\Users\\hangil\\myclinic-db\\test",
+			"C:\\Users\\hangil\\myclinic-db\\lib",
+			"C:\\Users\\hangil\\myclinic-db\\test"
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"cashier",
+			"pharma",
+			"defaultPort",
+			"programRunner",
+			"defaultSubs",
+			"print",
+			"print-all-button",
+			"print-all",
+			"updatePreviewDrug",
+			"task.",
+			"updatePreviewDrug",
+			"bindPageNav",
+			"clearPreview",
+			"navPageUpdate",
+			"nonPrescribedOnly",
+			"findPharmaDrug",
+			"previewDrug",
+			"getFullDrug",
+			"updatePreviewDrug",
+			"composeSingleDrugOps",
+			"updatePreviewDrug",
+			"composeAllDrugsPages",
+			"list_drug",
+			"findPharmaDrug",
+			"getFullDrug",
+			"visitId",
+			"get_drug",
+			"getDrug",
+			"getFullDrug",
+			"loader",
+			"iyakuhincode",
+			"visitId",
+			"_1",
+			"100",
+			"_name",
+			"last_name",
+			"patient_id",
+			"enter_visit",
+			"enterText",
+			"var ",
+			"=",
+			";",
+			"name",
+			"name ",
+			"insert_patient",
+			"enter_patient",
+			"searchParams",
+			"start_exam",
+			"POST",
+			"c",
+			"cb(",
+			"cb(\"not implemented yet\")",
+			"\"POST\"",
+			"list_drugs",
+			"pharma_drug",
+			"list_visits",
+			"list_drugs",
+			"list_full_drugs",
+			"checked",
+			");",
+			"printUtil.getSetting(",
+			"kind",
+			"presc",
+			"data-key",
+			"drugbag",
+			"prescCurrentSetting",
+			"presc",
+			"<select></select>",
+			"settings",
+			"wrapper",
+			"prints",
+			"print",
+			"composeAllDrugsPages",
+			"preview",
+			"composeSingleDrugOps",
+			"previewDrug",
+			"composeSingleDrugOps",
+			"fetchDrugs",
+			"previewAllDrugs",
+			"startAllDrugs",
+			"console.log",
+			"composeSingleDrugOps",
+			"startSingleDrug",
+			"composeSingleDrugOps",
+			"fetchDrugs",
+			"startSingleDrug",
+			"patientInfo",
+			"setupPackagingInfo",
+			"makeBirthdayRep",
+			"ctx",
+			"DrugBagData",
+			"util",
+			"drugListTmplSrc",
+			"packagingPatientTmplSrc",
+			"patientListTmplSrc",
+			"currentVisitId",
+			"mConsts",
+			"setupPackagingInfo",
+			"navPageUpdate",
+			"fetchDrugs",
+			"service.listDrugs",
+			"\tvar base = getBaseUrl();\n",
+			"base + ",
+			"techou",
+			"prescContent",
+			"util",
+			"drugbag",
+			"openTechouPreview",
+			"presc",
+			"PrintBlankDrugbags",
+			"breakLines",
+			"refer",
+			"calcNumberOfPages",
+			"visitsPerPage",
+			"calcNumberOfPages",
+			"numberOfPages",
+			"DrugList",
+			"packagingPatient",
+			"start-chouzai",
+			"startChou",
+			"IncludeAllPatientsInput",
+			"patientList",
+			"PatientList",
+			"validUpto",
+			"validFrom",
+			"valid_from",
+			"prescDone",
+			"request("
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": true,
+		"regex": false,
+		"replace_history":
+		[
+			"PharmaDrug",
+			"diseaseAdj",
+			"disease",
+			"shuushokugo",
+			"",
+			"kizai",
+			"Kizai",
+			""
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 0,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "web-src/patient-info.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 6954,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax"
+						},
+						"translation.x": -0.0,
+						"translation.y": 3294.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				}
+			]
+		},
+		{
+			"sheets":
+			[
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 26.0
+	},
+	"input":
+	{
+		"height": 34.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			],
+			[
+				1,
+				0,
+				2,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			0.5,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.doc":
+	{
+		"height": 0.0
+	},
+	"output.exec":
+	{
+		"height": 118.0
+	},
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"pinned_build_system": "",
+	"project": "myclinic-reception.sublime-project",
+	"replace":
+	{
+		"height": 48.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"worldt",
+				"world.ts"
+			],
+			[
+				"pres",
+				"C:\\Users\\hangil\\myclinic-pharma\\web-src\\presc-main.js"
+			],
+			[
+				"presc-main",
+				"C:\\Users\\hangil\\myclinic-pharma\\web-src\\presc-main.js"
+			],
+			[
+				"server",
+				"C:\\Users\\hangil\\work\\myclinic-node3\\server.js"
+			],
+			[
+				"index.html",
+				"C:\\Users\\hangil\\myclinic-refer\\web-src\\index.html"
+			],
+			[
+				"servcic",
+				"C:\\Users\\hangil\\myclinic-practice\\lib\\service.js"
+			],
+			[
+				"record.js",
+				"C:\\Users\\hangil\\myclinic-practice\\web-src\\record\\record.js"
+			],
+			[
+				"shiregu",
+				"C:\\Users\\hangil\\myclinic-practice\\web-src\\record\\shinryou-add-regular.js"
+			],
+			[
+				"service",
+				"C:\\Users\\hangil\\myclinic-practice\\lib\\service.js"
+			]
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": false,
+	"show_open_files": true,
+	"show_tabs": true,
+	"side_bar_visible": false,
+	"side_bar_width": 150.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}
