@@ -1187,7 +1187,7 @@
 /* 5 */
 /***/ function(module, exports) {
 
-	module.exports = "\r\n<table class=\"wqueue-table\">\r\n\t{{#list}}\r\n\t<tr>\r\n\t\t<td class=\"{{state_as_alpha}}\">{{state_as_kanji}}</td>\r\n\t\t<td class=\"{{state_as_alpha}}\" style=\"text-align:right\">[{{patient_id_rep}}]</td>\r\n\t\t<td class=\"{{state_as_alpha}}\" style=\"max-width:260px\">{{last_name}} {{first_name}} ({{last_name_yomi}} {{first_name_yomi}})</td>\r\n\t\t<td>\r\n\t\t\t受付番号：{{visit_id}}\r\n\t\t</td>\r\n\t</tr>\r\n\t{{/list}}\r\n</table>\r\n"
+	module.exports = "\r\n<table class=\"wqueue-table\" style=\"width:100%\">\r\n\t{{#list}}\r\n\t<tr class=\"wqueue-row\">\r\n\t\t<td class=\"{{state_as_alpha}}\" style=\"width:40px\">{{state_as_kanji}}</td>\r\n\t\t<td class=\"{{state_as_alpha}}\" style=\"text-align:right\">[{{patient_id_rep}}]</td>\r\n\t\t<td class=\"{{state_as_alpha}}\" style=\"max-width:260px\">{{last_name}} {{first_name}} ({{last_name_yomi}} {{first_name_yomi}})</td>\r\n\t\t<td style=\"width:130px;text-align:right\">\r\n\t\t\t受付番号：{{visit_id}}\r\n\t\t</td>\r\n\t</tr>\r\n\t{{/list}}\r\n</table>\r\n"
 
 /***/ },
 /* 6 */

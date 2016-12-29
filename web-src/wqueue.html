@@ -1,11 +1,11 @@
 
-<table class="wqueue-table">
+<table class="wqueue-table" style="width:100%">
 	{{#list}}
-	<tr>
-		<td class="{{state_as_alpha}}">{{state_as_kanji}}</td>
+	<tr class="wqueue-row">
+		<td class="{{state_as_alpha}}" style="width:40px">{{state_as_kanji}}</td>
 		<td class="{{state_as_alpha}}" style="text-align:right">[{{patient_id_rep}}]</td>
 		<td class="{{state_as_alpha}}" style="max-width:260px">{{last_name}} {{first_name}} ({{last_name_yomi}} {{first_name_yomi}})</td>
-		<td>
+		<td style="width:130px;text-align:right">
 			受付番号：{{visit_id}}
 		</td>
 	</tr>

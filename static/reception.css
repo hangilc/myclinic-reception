@@ -6,6 +6,7 @@ table.info-table tr td:first-child { color:#666; }
 .kanji { ime-mode: active }
 .wqueue-table .wait-cashier { color: red; }
 .wqueue-table .wait-drug { color: green; }
+.wqueue-table .wqueue-row:hover { background-color:#ccc }
 .workarea-panel {
 	border: 2px solid #ccc;
 	margin: 3px;
