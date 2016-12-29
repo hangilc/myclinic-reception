@@ -40,3 +40,7 @@ function bindSearch(dom, callbacks){
 		});
 	});
 }
+
+exports.setupFocus = function (dom){
+	dom.querySelector("form.search-form input[name='search-text']").focus();
+}

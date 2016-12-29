@@ -47,36 +47,6 @@ function updateWqueue(){
 	});
 }
 
-// function doStartVisit(patientId, done){
-// 	service.getPatient(+patientId, function(err, patient){
-// 		if( err ){
-// 			done(err);
-// 			return;
-// 		}
-// 		modal.startModal({
-// 			title: "患者受付",
-// 			init: function(content, close){
-// 				StartVisit.render(content, patient, {
-// 					onClose: function(){
-// 						close();
-// 						done("cancel");
-// 					},
-// 					onError: function(err){
-// 						close();
-// 						done(err);
-// 					},
-// 					onEnter: function(){
-// 						var e = new Event("new-visit", { bubbles: true });
-// 						document.body.dispatchEvent(e);
-// 						close();
-// 						done();
-// 					}
-// 				});
-// 			}
-// 		});
-// 	});
-// }
-
 domStartVisitButton.addEventListener("click", function(){
 	var patientId = domPatientIdInput.value;
 	if( patientId === "" ){
@@ -215,8 +185,9 @@ domRecentlyEnteredPatientsLink.addEventListener("click", function(){
 });
 
 domSearchPatientsLink.addEventListener("click", function(){
+	var search;
 	var panel = Panel.create("患者検索", function(content){
-		var search = SearchPatient.create({
+		search = SearchPatient.create({
 			onStartVisit: function(patientId){
 				doStartVisit(patientId, function(err){
 					if( err === "cancel" ){
@@ -245,6 +216,7 @@ domSearchPatientsLink.addEventListener("click", function(){
 		content.appendChild(search);
 	});
 	Panel.prepend(panel);
+	SearchPatient.setupFocus(search);
 });
 
 function broadcast(selector, event){
@@ -305,4 +277,4 @@ document.addEventListener("broadcast-kouhi-deleted", function(event){
 	broadcast(".listening-to-kouhi-deleted", e);
 });
 
-
+document.getElementById("patient-id-input").focus();
